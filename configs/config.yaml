@@ -1,0 +1,33 @@
+# Configuración central del proyecto.
+# Regla (CLAUDE.md): nada de valores quemados en el código; todo se lee de aquí.
+
+mlflow:
+  tracking_uri: "http://127.0.0.1:5000"
+  experiment_name: "salarios-ai-ml"
+  registered_model_name: "salarios-ai-ml-model"
+
+dataset:
+  # Seleccionado PROVISIONALMENTE (2026-09-17), pendiente de confirmación con el
+  # equipo y la profesora (fuente Kaggle + unicidad por equipo). Ver docs/decisiones.md.
+  name: "global-ai-ml-data-science-salary-2025"
+  kaggle_page: "https://www.kaggle.com/datasets/samithsachidanandan/the-global-ai-ml-data-science-salary-for-2025"
+  # Endpoint público de la API de Kaggle: descarga anónima verificada (no requiere credenciales).
+  # Devuelve un zip que contiene salaries.csv.
+  source_url: "https://www.kaggle.com/api/v1/datasets/download/samithsachidanandan/the-global-ai-ml-data-science-salary-for-2025"
+  raw_filename: "salaries.csv"
+  target_column: "salary_in_usd"
+  # Columnas que NO pueden usarse como features: salary_in_usd es la conversión
+  # directa de salary + salary_currency (fuga de información / leakage).
+  leakage_columns: ["salary", "salary_currency"]
+
+paths:
+  raw: "data/raw"
+  processed: "data/processed"
+  models: "models"
+
+training:
+  random_state: 42
+  # Propuesta de partición temporal (se valida en el EDA): train <= 2024, validación = 2025.
+  validation_year: 2025
+  # PENDIENTE: espacio de hiperparámetros definitivo tras el baseline.
+  n_trials: 15

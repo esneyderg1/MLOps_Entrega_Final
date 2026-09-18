@@ -1,0 +1,27 @@
+Entrega Final: Orquestación del Pipeline de Machine Learning y Despliegue del modelo
+
+
+Para la entrega del trabajo, los equipos deberán seleccionar un dataset (recomendación: https://archive.ics.uci.edu/, DEBE SER ÚNICO POR EQUIPO) y enfocarse en la orquestación con prefect de todos los procesos que conforman el ciclo de vida del Machine learning (adquisición de los datos, transformación y procesamiento, feature engineering, entrenamiento y optimización del modelo, registro y versionado). 
+
+Objetivos de la Entrega:
+Orquestación de Procesos: Utilizando herramientas como MLflow y Prefect, orquesten todos los pasos necesarios en el flujo de trabajo de machine learning, que incluye:
+
+Adquisición de Datos: Incorporen una etapa que facilite la recolección de datos de diversas fuentes de manera estructurada y automatizada.
+Procesamiento de Datos: Basándose en lo aprendido durante el Análisis Exploratorio de Datos (EDA), implementen las transformaciones y filtrados necesarios para preparar los datos para el entrenamiento del modelo.
+Entrenamiento del Modelo: Utilicen este flujo de trabajo orquestado para entrenar el modelo, asegurando que se registren los parámetros, métricas y versiones de los modelos en MLflow.
+Repositorio: En su repositorio, deberán incluir el scaffolding que contemple todos estos elementos. Asegúrense de que la estructura del proyecto permita una fácil comprensión y acceso a los diferentes componentes del flujo de trabajo.
+Modelo Candidato: De esta orquestación, deberán tomar la decisión sobre el modelo candidato que podría ser candidato para salir a producción. Esto implica no solo entrenar el modelo, sino también evaluar su rendimiento y robustez a través de métricas relevantes.
+
+
+(*) El entregable será el link al repositorio, cada miembro del equipo debe de tener al menos un commit demostrando su aporte a la solución, en la nota también será considerada la presentación del proyecto. 
+
+*Se recomienda el uso de conventional commit, más información en https://www.conventionalcommits.org/en/v1.0.0/
+
+(*) El alcance será hasta desplegar sin incluir monitoreo.
+
+Posibles formas de deploy:
+
+batch
+web-service con API
+dockers 
+Es válido la continuación de algún proyecto que se haya trabajado en cursos anteriores. 

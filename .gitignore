@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Proyecto: datos y artefactos de MLflow (regla 4 de CLAUDE.md) ---
+data/*
+!data/raw
+!data/processed
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+models/*
+!models/.gitkeep
+mlflow.db
+mlruns/
