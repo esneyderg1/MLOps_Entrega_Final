@@ -1,8 +1,7 @@
 # Ficha del dataset — The Global AI/ML/Data Science Salary for 2025
 
-> **Estado: seleccionado provisionalmente (2026-09-17).** Pendiente de confirmar
-> con la profesora que la fuente Kaggle es válida (las instrucciones *recomiendan*
-> UCI) y que ningún otro equipo lo está usando (la unicidad sí es obligatoria).
+> **Estado: confirmado (2026-09-18).** Aval de la profesora (fuente Kaggle) y del
+> equipo obtenidos; unicidad frente a otros equipos verificada.
 
 ## Fuente
 

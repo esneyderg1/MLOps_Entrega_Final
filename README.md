@@ -16,9 +16,9 @@ Orquestar con **Prefect** el ciclo de vida completo de un modelo de Machine Lear
 optimización, registro y versionado en **MLflow**) y desplegar un modelo candidato.
 El enunciado completo está en `Instrucciones.txt`.
 
-> **Estado:** scaffolding y entorno listos. Dataset seleccionado provisionalmente:
+> **Estado:** scaffolding y entorno listos. Dataset confirmado:
 > [The Global AI/ML/Data Science Salary for 2025](https://www.kaggle.com/datasets/samithsachidanandan/the-global-ai-ml-data-science-salary-for-2025)
-> (regresión sobre `salary_in_usd`) — pendiente de aval del equipo y la profesora.
+> (regresión sobre `salary_in_usd`). EDA completado (`notebooks/01_eda.ipynb`).
 > Ficha del dataset en `docs/dataset.md`; modalidad de despliegue por definir
 > (`docs/decisiones.md`).
 
@@ -102,5 +102,5 @@ commits propios.
 
 El avance del proyecto se lleva en el **Plan de trabajo (checklist)** al final de
 `CLAUDE.md`: una tarea solo se marca cuando está terminada, verificada y
-funcionando. Estado actual: **1/11 completada** (repo y scaffolding); la
-siguiente es la **selección del dataset y el EDA**.
+funcionando. Estado actual: **3/11 completadas** (scaffolding, selección del
+dataset y EDA); la siguiente es la **adquisición de datos automatizada**.

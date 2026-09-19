@@ -8,7 +8,7 @@ Proyecto final de la materia **MLOps / Aprendizaje en la nube** (Universidad de 
 
 **Alcance:** hasta el despliegue. **NO incluye monitoreo** (fuera del alcance de la entrega).
 
-**Estado actual:** scaffolding listo y entorno funcionando. Dataset seleccionado **PROVISIONALMENTE**: *The Global AI/ML/Data Science Salary for 2025* (Kaggle) — regresión sobre `salary_in_usd`, ficha completa en `docs/dataset.md` y parámetros en `configs/config.yaml`. Falta el aval del equipo y de la profesora (fuente Kaggle + unicidad); **no arrancar el EDA ni la adquisición hasta ese aval**. La forma de despliegue AÚN NO está definida (batch, web service con API, o Docker): no implementar nada de deployment hasta que el equipo lo decida y se actualice este archivo.
+**Estado actual:** scaffolding listo y entorno funcionando. Dataset **confirmado**: *The Global AI/ML/Data Science Salary for 2025* (Kaggle) — regresión sobre `salary_in_usd`, ficha completa en `docs/dataset.md` y parámetros en `configs/config.yaml`. Aval del equipo y de la profesora obtenido (fuente Kaggle + unicidad verificada). **EDA completado** (`notebooks/01_eda.ipynb`): sin nulos, duplicados y atípicos altos legítimos (se conservan), partición temporal train≤2024/validación 2025 confirmada. Siguiente paso: adquisición de datos automatizada (Prefect). La forma de despliegue AÚN NO está definida (batch, web service con API, o Docker): no implementar nada de deployment hasta que el equipo lo decida y se actualice este archivo.
 
 ## Regla 1 — Gestión de entorno y dependencias: SOLO con uv
 
@@ -102,17 +102,20 @@ antes de marcarse.
   kernel visible en `jupyter kernelspec list`.
 
 ### 2. Selección del dataset y definición del problema
-- [ ] Confirmar el dataset con la profesora (fuente Kaggle) y verificar unicidad frente a otros equipos.
-  *Seleccionado provisionalmente (2026-09-17): The Global AI/ML/Data Science Salary for 2025 — este ítem se marca solo con el aval.*
+- [x] **(2026-09-18)** Confirmar el dataset con la profesora (fuente Kaggle) y verificar unicidad frente a otros equipos.
+  *Verificado:* aval del equipo y de la profesora obtenido para The Global AI/ML/Data Science Salary for 2025. Documentado en `docs/decisiones.md` y `docs/dataset.md`.
 - [x] **(2026-09-17)** Definir el problema de negocio hipotético, la variable objetivo y la métrica de éxito.
   *Verificado:* regresión sobre `salary_in_usd`, RMSE como métrica principal con validación temporal (≤2024 / 2025), caso de negocio de benchmarking salarial. Documentado en `docs/dataset.md`.
 - [x] **(2026-09-17)** Documentar la decisión y el dataset, y actualizar la configuración.
   *Verificado:* ficha con diccionario de datos y riesgos en `docs/dataset.md` (perfil real de la descarga: 88.584 filas, 0 nulos, descarga anónima probada), decisión en `docs/decisiones.md`, `configs/config.yaml` con source_url/target/leakage_columns, "Estado actual" actualizado.
 
 ### 3. Análisis exploratorio (EDA)
-- [ ] Notebook `notebooks/01_eda.ipynb` con el kernel `proyecto-final (3.11)`: distribución de la variable objetivo, faltantes, atípicos, correlaciones.
-- [ ] Conclusiones escritas del EDA: qué filtros, imputaciones y transformaciones necesita el preprocesamiento.
-- [ ] Definir estrategia de partición train/validación.
+- [x] **(2026-09-18)** Notebook `notebooks/01_eda.ipynb` con el kernel `proyecto-final (3.11)`: distribución de la variable objetivo, faltantes, atípicos, correlaciones.
+  *Verificado:* ejecutado de punta a punta con `jupyter nbconvert --execute` sobre el kernel `proyecto-final`, 0 errores en las 21 celdas de código, 3 gráficos generados, metadata del notebook apuntando al kernel correcto.
+- [x] **(2026-09-18)** Conclusiones escritas del EDA: qué filtros, imputaciones y transformaciones necesita el preprocesamiento.
+  *Verificado:* sección 8 del notebook y resumen en `docs/decisiones.md` (duplicados y atípicos altos se conservan, agrupación de `job_title`/ubicación por baja frecuencia, evaluar `log1p` del target con destransformación antes del RMSE; sin imputaciones por no haber nulos).
+- [x] **(2026-09-18)** Definir estrategia de partición train/validación.
+  *Verificado:* partición temporal confirmada en la sección 7 del notebook (train `work_year`≤2024, validación `work_year`=2025) tras comparar distribuciones de target y `experience_level` entre ambos periodos.
 
 ### 4. Adquisición de datos automatizada
 - [ ] Módulo en `src/proyecto_final/data/`: descarga reproducible del dataset a `data/raw/` (con reintentos, sin pasos manuales).
