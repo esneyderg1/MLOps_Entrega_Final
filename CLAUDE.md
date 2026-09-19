@@ -8,7 +8,7 @@ Proyecto final de la materia **MLOps / Aprendizaje en la nube** (Universidad de 
 
 **Alcance:** hasta el despliegue. **NO incluye monitoreo** (fuera del alcance de la entrega).
 
-**Estado actual:** scaffolding listo y entorno funcionando. Dataset **confirmado**: *The Global AI/ML/Data Science Salary for 2025* (Kaggle) — regresión sobre `salary_in_usd`, ficha completa en `docs/dataset.md` y parámetros en `configs/config.yaml`. Aval del equipo y de la profesora obtenido (fuente Kaggle + unicidad verificada). **EDA completado** (`notebooks/01_eda.ipynb`): sin nulos, duplicados y atípicos altos legítimos (se conservan), partición temporal train≤2024/validación 2025 confirmada. Siguiente paso: adquisición de datos automatizada (Prefect). La forma de despliegue AÚN NO está definida (batch, web service con API, o Docker): no implementar nada de deployment hasta que el equipo lo decida y se actualice este archivo.
+**Estado actual:** scaffolding listo y entorno funcionando. Dataset **confirmado**: *The Global AI/ML/Data Science Salary for 2025* (Kaggle) — regresión sobre `salary_in_usd`, ficha completa en `docs/dataset.md` y parámetros en `configs/config.yaml`. Aval del equipo y de la profesora obtenido (fuente Kaggle + unicidad verificada). **EDA completado** (`notebooks/01_eda.ipynb`): sin nulos, duplicados y atípicos altos legítimos (se conservan), partición temporal train≤2024/validación 2025 confirmada. **Adquisición de datos automatizada completada**: flow de Prefect en `proyecto_final.flows.acquisition_flow` descarga el dataset y genera `metadata.json` de punta a punta. Siguiente paso: procesamiento y feature engineering. La forma de despliegue AÚN NO está definida (batch, web service con API, o Docker): no implementar nada de deployment hasta que el equipo lo decida y se actualice este archivo.
 
 ## Regla 1 — Gestión de entorno y dependencias: SOLO con uv
 
@@ -118,9 +118,12 @@ antes de marcarse.
   *Verificado:* partición temporal confirmada en la sección 7 del notebook (train `work_year`≤2024, validación `work_year`=2025) tras comparar distribuciones de target y `experience_level` entre ambos periodos.
 
 ### 4. Adquisición de datos automatizada
-- [ ] Módulo en `src/proyecto_final/data/`: descarga reproducible del dataset a `data/raw/` (con reintentos, sin pasos manuales).
-- [ ] Generación de `metadata.json` (filas, columnas, sha256) para versionar el dataset.
-- [ ] Task/flow de Prefect que ejecuta la adquisición: `uv run python -m proyecto_final.flows.<nombre>` corre de punta a punta.
+- [x] **(2026-09-19)** Módulo en `src/proyecto_final/data/`: descarga reproducible del dataset a `data/raw/` (con reintentos, sin pasos manuales).
+  *Verificado:* `src/proyecto_final/data/acquisition.py` con `download_raw_dataset`/`compute_dataset_metadata`/`save_metadata`, cubiertas por 3 tests en `tests/unit/test_acquisition.py` (`uv run pytest` en verde, descarga mockeada sin red real).
+- [x] **(2026-09-19)** Generación de `metadata.json` (filas, columnas, sha256) para versionar el dataset.
+  *Verificado:* `data/raw/metadata.json` generado por el flow (88.584 filas, 11 columnas, sha256 coincide con el verificado en el EDA); no se versiona en git (dentro de `data/`).
+- [x] **(2026-09-19)** Task/flow de Prefect que ejecuta la adquisición: `uv run python -m proyecto_final.flows.<nombre>` corre de punta a punta.
+  *Verificado:* `uv run python -m proyecto_final.flows.acquisition_flow` corre de punta a punta (servidor efímero de Prefect), probado dos veces simulando un clon limpio (`data/raw/` vacío salvo `.gitkeep`); reintentos de la task de descarga (`retries=3`) verificados por separado con una task de prueba que falla 2 veces y se recupera en el 3er intento.
 
 ### 5. Procesamiento y feature engineering
 - [ ] Módulo en `src/proyecto_final/features/` con las transformaciones definidas en el EDA (de `data/raw/` a `data/processed/`).

@@ -18,7 +18,9 @@ El enunciado completo está en `Instrucciones.txt`.
 
 > **Estado:** scaffolding y entorno listos. Dataset confirmado:
 > [The Global AI/ML/Data Science Salary for 2025](https://www.kaggle.com/datasets/samithsachidanandan/the-global-ai-ml-data-science-salary-for-2025)
-> (regresión sobre `salary_in_usd`). EDA completado (`notebooks/01_eda.ipynb`).
+> (regresión sobre `salary_in_usd`). EDA completado (`notebooks/01_eda.ipynb`) y
+> adquisición de datos automatizada con Prefect
+> (`uv run python -m proyecto_final.flows.acquisition_flow`).
 > Ficha del dataset en `docs/dataset.md`; modalidad de despliegue por definir
 > (`docs/decisiones.md`).
 
@@ -85,6 +87,16 @@ uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///
 
 UI de MLflow: http://127.0.0.1:5000
 
+## Flows de Prefect
+
+Cada flow corre de punta a punta con un solo comando (regla 3 de `CLAUDE.md`) y
+levanta un servidor efímero de Prefect si no hay uno corriendo — no hace falta
+configurar nada a mano.
+
+| Flow | Comando | Qué hace | Entrada | Salida |
+|---|---|---|---|---|
+| Adquisición de datos | `uv run python -m proyecto_final.flows.acquisition_flow` | Descarga el dataset desde Kaggle (sin caché: siempre trae la versión más reciente) y reintenta hasta 3 veces si falla la red | `configs/config.yaml` (`dataset.source_url`) | `data/raw/salaries.csv`, `data/raw/metadata.json` (filas, columnas, sha256) |
+
 ## Comandos útiles
 
 ```bash
@@ -102,5 +114,6 @@ commits propios.
 
 El avance del proyecto se lleva en el **Plan de trabajo (checklist)** al final de
 `CLAUDE.md`: una tarea solo se marca cuando está terminada, verificada y
-funcionando. Estado actual: **3/11 completadas** (scaffolding, selección del
-dataset y EDA); la siguiente es la **adquisición de datos automatizada**.
+funcionando. Estado actual: **4/11 completadas** (scaffolding, selección del
+dataset, EDA y adquisición de datos automatizada); la siguiente es
+**procesamiento y feature engineering**.
