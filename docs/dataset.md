@@ -36,6 +36,31 @@
 | `company_location` | cat | 90 | País de la empresa (ISO-2) | Feature |
 | `company_size` | cat | 3 (S/M/L) | Tamaño de la empresa | Feature |
 
+## Leyenda de los códigos categóricos
+
+Los códigos abreviados que usa el dataset (heredados de ai-jobs.net):
+
+| Columna | Código | Significado |
+|---|---|---|
+| `experience_level` | `EN` | Entry-level / Junior |
+| | `MI` | Mid-level / Intermedio |
+| | `SE` | Senior |
+| | `EX` | Executive / Dirección |
+| `employment_type` | `FT` | Full-time (tiempo completo) |
+| | `PT` | Part-time (medio tiempo) |
+| | `CT` | Contract (por contrato) |
+| | `FL` | Freelance |
+| `remote_ratio` | `0` | Presencial |
+| | `50` | Híbrido |
+| | `100` | Remoto total |
+| `company_size` | `S` | Pequeña (< 50 empleados) |
+| | `M` | Mediana (50–250 empleados) |
+| | `L` | Grande (> 250 empleados) |
+
+Distribución observada (descarga 2026-09-17): `experience_level` → SE 58%, MI 30%,
+EN 9%, EX 2% (muestra sesgada a seniors); `employment_type` → FT ~99%;
+`company_size` → M dominante. Detalle completo en `notebooks/01_eda.ipynb`, sección 5.
+
 ## Definición del problema
 
 - **Tipo:** regresión.

@@ -25,9 +25,41 @@ paths:
   processed: "data/processed"
   models: "models"
 
+features:
+  # remote_ratio se trata como categórica: solo toma 3 valores (0/50/100) y el
+  # EDA mostró que como numérica casi no correlaciona con el target.
+  categorical:
+    - experience_level
+    - employment_type
+    - company_size
+    - remote_ratio
+    - job_title
+    - employee_residence
+    - company_location
+  numerical:
+    - work_year
+  # Agrupación de categorías poco frecuentes (conclusión del EDA: job_title tiene
+  # 312 valores y las columnas de país ~90). Las categorías frecuentes se aprenden
+  # SOLO de train para no filtrar información de validación.
+  rare_grouping:
+    columns:
+      - job_title
+      - employee_residence
+      - company_location
+    min_freq: 0.01        # < 1% de las filas de train => se agrupa en other_label
+    other_label: "OTHER"
+
+processed:
+  train_filename: "train.parquet"
+  validation_filename: "validation.parquet"
+
 training:
   random_state: 42
   # Propuesta de partición temporal (se valida en el EDA): train <= 2024, validación = 2025.
   validation_year: 2025
   # PENDIENTE: espacio de hiperparámetros definitivo tras el baseline.
   n_trials: 15
+  # Baseline (actividad 6): parámetros deliberadamente simples; el piso a superar.
+  baseline:
+    n_estimators: 100
+    max_depth: 10

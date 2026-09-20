@@ -16,12 +16,12 @@ Orquestar con **Prefect** el ciclo de vida completo de un modelo de Machine Lear
 optimización, registro y versionado en **MLflow**) y desplegar un modelo candidato.
 El enunciado completo está en `Instrucciones.txt`.
 
-> **Estado:** scaffolding y entorno listos. Dataset confirmado:
+> **Estado:** dataset confirmado:
 > [The Global AI/ML/Data Science Salary for 2025](https://www.kaggle.com/datasets/samithsachidanandan/the-global-ai-ml-data-science-salary-for-2025)
-> (regresión sobre `salary_in_usd`). EDA completado (`notebooks/01_eda.ipynb`) y
-> adquisición de datos automatizada con Prefect
-> (`uv run python -m proyecto_final.flows.acquisition_flow`).
-> Ficha del dataset en `docs/dataset.md`; modalidad de despliegue por definir
+> (regresión sobre `salary_in_usd`, ficha en `docs/dataset.md`). Completados: EDA
+> (`notebooks/01_eda.ipynb`) y los flows de adquisición, procesamiento y baseline
+> (ver tabla de flows). Baseline a superar: **RMSE 68.547 USD** (`rf_baseline`).
+> Siguiente: optimización con Optuna. Modalidad de despliegue por definir
 > (`docs/decisiones.md`).
 
 ## Estructura del repositorio
@@ -89,13 +89,25 @@ UI de MLflow: http://127.0.0.1:5000
 
 ## Flows de Prefect
 
-Cada flow corre de punta a punta con un solo comando (regla 3 de `CLAUDE.md`) y
-levanta un servidor efímero de Prefect si no hay uno corriendo — no hace falta
-configurar nada a mano.
+Cada flow corre de punta a punta con un solo comando (regla 3 de `CLAUDE.md`).
+El código es **agnóstico al servidor de Prefect**: la conexión sale del perfil
+local de cada máquina, nunca del repo.
+
+- **Prefect Cloud** (así trabaja el equipo): inicia sesión una vez con
+  `uv run prefect cloud login` y cada ejecución imprime la URL del run en el
+  dashboard compartido.
+- **Local** (sin cuenta, por ejemplo para el peer review): no hay que configurar
+  nada — el flow levanta un servidor efímero automáticamente. Para una UI local
+  persistente: `uv run prefect server start` → http://127.0.0.1:4200.
+
+En ambos casos el comando del flow es exactamente el mismo. Las credenciales de
+Prefect Cloud son personales y **nunca se commitean**.
 
 | Flow | Comando | Qué hace | Entrada | Salida |
 |---|---|---|---|---|
 | Adquisición de datos | `uv run python -m proyecto_final.flows.acquisition_flow` | Descarga el dataset desde Kaggle (sin caché: siempre trae la versión más reciente) y reintenta hasta 3 veces si falla la red | `configs/config.yaml` (`dataset.source_url`) | `data/raw/salaries.csv`, `data/raw/metadata.json` (filas, columnas, sha256) |
+| Procesamiento | `uv run python -m proyecto_final.flows.processing_flow` | Excluye columnas de leakage, parte train (≤2024) / validación (2025) y agrupa categorías raras (aprendidas solo de train) | `data/raw/salaries.csv`, `configs/config.yaml` (`features`) | `data/processed/train.parquet`, `validation.parquet`, `metadata.json` |
+| Baseline | `uv run python -m proyecto_final.flows.baseline_flow` | Entrena y trackea en MLflow el piso a superar: `dummy_median` (mediana) y `rf_baseline` (RandomForest simple), con el pipeline completo logueado. Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.baseline`) | 2 runs en el experimento `salarios-ai-ml` (RMSE baseline: 68.547 USD) |
 
 ## Comandos útiles
 
@@ -114,6 +126,6 @@ commits propios.
 
 El avance del proyecto se lleva en el **Plan de trabajo (checklist)** al final de
 `CLAUDE.md`: una tarea solo se marca cuando está terminada, verificada y
-funcionando. Estado actual: **4/11 completadas** (scaffolding, selección del
-dataset, EDA y adquisición de datos automatizada); la siguiente es
-**procesamiento y feature engineering**.
+funcionando. Estado actual: **6/11 completadas** (scaffolding, selección del
+dataset, EDA, adquisición, procesamiento/feature engineering y baseline con
+tracking en MLflow); la siguiente es **optimización de hiperparámetros con Optuna**.

@@ -8,7 +8,7 @@ Proyecto final de la materia **MLOps / Aprendizaje en la nube** (Universidad de 
 
 **Alcance:** hasta el despliegue. **NO incluye monitoreo** (fuera del alcance de la entrega).
 
-**Estado actual:** scaffolding listo y entorno funcionando. Dataset **confirmado**: *The Global AI/ML/Data Science Salary for 2025* (Kaggle) — regresión sobre `salary_in_usd`, ficha completa en `docs/dataset.md` y parámetros en `configs/config.yaml`. Aval del equipo y de la profesora obtenido (fuente Kaggle + unicidad verificada). **EDA completado** (`notebooks/01_eda.ipynb`): sin nulos, duplicados y atípicos altos legítimos (se conservan), partición temporal train≤2024/validación 2025 confirmada. **Adquisición de datos automatizada completada**: flow de Prefect en `proyecto_final.flows.acquisition_flow` descarga el dataset y genera `metadata.json` de punta a punta. Siguiente paso: procesamiento y feature engineering. La forma de despliegue AÚN NO está definida (batch, web service con API, o Docker): no implementar nada de deployment hasta que el equipo lo decida y se actualice este archivo.
+**Estado actual:** scaffolding listo y entorno funcionando. Dataset **confirmado**: *The Global AI/ML/Data Science Salary for 2025* (Kaggle) — regresión sobre `salary_in_usd`, ficha completa en `docs/dataset.md` y parámetros en `configs/config.yaml`. Aval del equipo y de la profesora obtenido (fuente Kaggle + unicidad verificada). **EDA completado** (`notebooks/01_eda.ipynb`): sin nulos, duplicados y atípicos altos legítimos (se conservan), partición temporal train≤2024/validación 2025 confirmada. **Adquisición de datos automatizada completada**: flow de Prefect en `proyecto_final.flows.acquisition_flow` descarga el dataset y genera `metadata.json` de punta a punta. **Procesamiento y feature engineering completado**: `proyecto_final.flows.processing_flow` genera `data/processed/` (train ≤2024 / validación 2025, sin leakage, categorías raras agrupadas) y `proyecto_final.features.preprocessing.build_preprocessor` queda listo para la etapa de entrenamiento. El equipo trabaja los flows en **Prefect Cloud** con código agnóstico al servidor (regla 3). **Baseline completado**: `proyecto_final.flows.baseline_flow` trackea `dummy_median` y `rf_baseline` en el experimento `salarios-ai-ml` (RMSE a superar: 68.547 USD). Siguiente paso: optimización de hiperparámetros con Optuna (actividad 7). La forma de despliegue AÚN NO está definida (batch, web service con API, o Docker): no implementar nada de deployment hasta que el equipo lo decida y se actualice este archivo.
 
 ## Regla 1 — Gestión de entorno y dependencias: SOLO con uv
 
@@ -38,6 +38,7 @@ Proyecto final de la materia **MLOps / Aprendizaje en la nube** (Universidad de 
 - Los notebooks son SOLO para exploración (EDA, análisis puntuales). Nada que haga parte del pipeline puede vivir únicamente en un notebook: la lógica va en módulos de `src/` y los flows la orquestan.
 - Cada flow debe poder ejecutarse con un solo comando: `uv run python -m proyecto_final.flows.<nombre>`.
 - Tasks pequeñas, con una responsabilidad clara, con reintentos donde haya I/O (descargas, red).
+- **El código es agnóstico al servidor de Prefect.** El equipo trabaja en Prefect Cloud, pero los flows NUNCA referencian URLs, workspaces ni API keys de Prefect (ni en código, ni en `configs/`, ni commiteadas en ningún archivo): la conexión sale del perfil local de cada máquina. Quien no tenga sesión de Cloud corre exactamente el mismo código en modo local/efímero sin configurar nada — esto garantiza que el peer review pueda ejecutarlo.
 
 ## Regla 4 — Git y commits
 
@@ -126,14 +127,16 @@ antes de marcarse.
   *Verificado:* `uv run python -m proyecto_final.flows.acquisition_flow` corre de punta a punta (servidor efímero de Prefect), probado dos veces simulando un clon limpio (`data/raw/` vacío salvo `.gitkeep`); reintentos de la task de descarga (`retries=3`) verificados por separado con una task de prueba que falla 2 veces y se recupera en el 3er intento.
 
 ### 5. Procesamiento y feature engineering
-- [ ] Módulo en `src/proyecto_final/features/` con las transformaciones definidas en el EDA (de `data/raw/` a `data/processed/`).
-- [ ] Preprocesador sklearn (ColumnTransformer/Pipeline) reutilizable en entrenamiento y despliegue.
-- [ ] Tests unitarios en `tests/unit/` para cada transformación (`uv run pytest` en verde).
+- [x] **(2026-09-19)** Módulo `src/proyecto_final/features/preprocessing.py`: exclusión de leakage, partición temporal ≤2024/2025, agrupación de categorías raras aprendida SOLO de train; orquestado en `proyecto_final.flows.processing_flow`.
+- [x] **(2026-09-19)** Preprocesador sklearn reutilizable (`build_preprocessor`: OneHotEncoder `handle_unknown="ignore"` + StandardScaler); el fit se hará solo con train en la actividad 6.
+- [x] **(2026-09-19)** 6 tests nuevos en `tests/unit/test_preprocessing.py`.
+  *Verificado:* `uv run pytest` 10/10 en verde, `ruff check`/`format` limpios, flow de punta a punta OK → `data/processed/train.parquet` (72.709×9), `validation.parquet` (15.875×9) y `metadata.json` con sha256; leakage confirmado fuera y categoría `OTHER` presente.
 
 ### 6. Entrenamiento baseline con tracking
-- [ ] MLflow server local corriendo (SQLite) y experimento del proyecto creado.
-- [ ] Módulo en `src/proyecto_final/models/`: baseline simple, con params, métricas y modelo logueados en MLflow.
-- [ ] Métrica del baseline documentada (es el piso a superar).
+- [x] **(2026-09-19)** MLflow server local corriendo (SQLite) y experimento `salarios-ai-ml` creado.
+- [x] **(2026-09-19)** Módulo `src/proyecto_final/models/training.py` + flow `proyecto_final.flows.baseline_flow`: dos runs trackeados (params, métricas, tags y pipeline completo logueado) — `dummy_median` (piso absoluto) y `rf_baseline`.
+- [x] **(2026-09-19)** Métrica del baseline documentada: **RMSE 68.547 USD** (MAE 48.527, R² 0.225), 12,4% mejor que el dummy (78.233). Es el piso a superar en la actividad 7.
+  *Verificado:* flow de punta a punta OK, 15/15 tests y ruff en verde, runs `FINISHED` en la UI de MLflow, y el pipeline logueado se recargó desde MLflow (`runs:/<id>/model`) y predijo sobre datos crudos de validación.
 
 ### 7. Optimización de hiperparámetros
 - [ ] Estudio de Optuna (parent run + child runs `nested=True`), espacio de búsqueda propio del equipo.

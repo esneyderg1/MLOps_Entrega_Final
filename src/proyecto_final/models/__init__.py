@@ -1,6 +1,7 @@
 """Entrenamiento, optimización, evaluación y registro de modelos.
 
-Todo entrenamiento se loguea en MLflow; la optimización de hiperparámetros usa
-Optuna (parent run + child runs) y el mejor modelo se registra en el Model
-Registry con alias (champion/candidate). Ver reglas en CLAUDE.md.
+La lógica pura (pipelines, métricas) vive en `training.py`; el tracking en
+MLflow y la orquestación viven en los flows (`baseline_flow`, y los que sigan).
+Reglas: todo run trackeado en MLflow, Optuna con parent/child runs, promoción
+con aliases (ver CLAUDE.md, regla 2).
 """
