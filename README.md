@@ -126,6 +126,11 @@ Las reglas de trabajo (uv, MLflow, Prefect, estructura, commits) están en
 (`feat:`, `fix:`, `docs:`, ...), en español, y cada integrante debe aportar
 commits propios.
 
+**¿Nuevo en el proyecto o retomando?** Empieza por la
+[**guía de estudio**](docs/guia_estudio.md): estado actual, cómo funciona el
+pipeline de punta a punta, qué archivos leer en qué orden y las preguntas de
+sustentación que todos debemos poder responder.
+
 El avance del proyecto se lleva en el **Plan de trabajo (checklist)** al final de
 `CLAUDE.md`: una tarea solo se marca cuando está terminada, verificada y
 funcionando. Estado actual: **7/11 completadas** (scaffolding, selección del

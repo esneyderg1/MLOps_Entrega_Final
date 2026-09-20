@@ -93,7 +93,9 @@ MLOps_Entrega_Final/
 se comprobó el resultado). "Casi lista", "falta probar" o "compila" = sigue en `[ ]`.
 Quien marque una tarea anota la fecha y qué verificación se hizo. Cada tarea
 terminada se documenta (README, `docs/decisiones.md` o docstrings según aplique)
-antes de marcarse.
+antes de marcarse. Al completar una actividad, actualizar también
+`docs/guia_estudio.md` (estado, mapa del pipeline, ruta de lectura y preguntas
+de sustentación): es el documento con el que el equipo se pone al día.
 
 ### 1. Construcción del repo y scaffolding
 - [x] **(2026-09-17)** Estructura de carpetas, `CLAUDE.md` con reglas, `pyproject.toml` con uv,

@@ -64,6 +64,10 @@ training:
     max_depth: 10
   # Optimización de hiperparámetros (actividad 7): espacio de búsqueda del equipo
   # para el RandomForest, sobre el mismo pipeline del baseline.
+  # Comparación de familias de modelos (insumo de la actividad 8): mismos datos
+  # y misma validación que el baseline, para decidir el candidato con evidencia.
+  comparison:
+    ridge_alpha: 1.0
   optuna:
     study_name: "rf-optuna-salarios"
     n_top_trials: 5   # cuántos trials se resumen en el artifact del parent run
