@@ -47,6 +47,32 @@ def build_dummy_pipeline() -> Pipeline:
     return Pipeline([("model", DummyRegressor(strategy="median"))])
 
 
+def build_rf_pipeline(
+    categorical: list[str],
+    numerical: list[str],
+    random_state: int,
+    **rf_params,
+) -> Pipeline:
+    """Pipeline COMPLETO (preprocesador + RandomForest) con hiperparámetros libres.
+
+    `**rf_params` acepta cualquier combinación de hiperparámetros de
+    RandomForestRegressor (n_estimators, max_depth, etc.): la usa tanto el
+    baseline (actividad 6) como el estudio de Optuna (actividad 7), sin tener
+    que declarar cada hiperparámetro como argumento propio.
+    """
+    return Pipeline(
+        [
+            ("preprocessor", build_preprocessor(categorical, numerical)),
+            (
+                "model",
+                RandomForestRegressor(
+                    random_state=random_state, n_jobs=-1, **rf_params
+                ),
+            ),
+        ]
+    )
+
+
 def build_baseline_pipeline(
     categorical: list[str],
     numerical: list[str],
@@ -59,17 +85,10 @@ def build_baseline_pipeline(
     Es el pipeline COMPLETO (preprocesamiento incluido): el mismo objeto que se
     loguea en MLflow sirve para predecir sobre datos crudos en el despliegue.
     """
-    return Pipeline(
-        [
-            ("preprocessor", build_preprocessor(categorical, numerical)),
-            (
-                "model",
-                RandomForestRegressor(
-                    n_estimators=n_estimators,
-                    max_depth=max_depth,
-                    random_state=random_state,
-                    n_jobs=-1,
-                ),
-            ),
-        ]
+    return build_rf_pipeline(
+        categorical,
+        numerical,
+        random_state,
+        n_estimators=n_estimators,
+        max_depth=max_depth,
     )
