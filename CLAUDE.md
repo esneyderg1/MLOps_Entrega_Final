@@ -149,9 +149,10 @@ de sustentación): es el documento con el que el equipo se pone al día.
   *Verificado:* estructura parent/child confirmada por la API de MLflow (`search_runs` con filtro `parentRunId`, 15/15 child runs). **Resultado del estudio:** mejor RMSE 68.142 USD, solo 0.59% mejor que el `rf_baseline` (68.547) — muy por debajo del ~10% esperado en `docs/dataset.md`; documentado como limitación real en `docs/decisiones.md` (no se fuerza el número ampliando el espacio de búsqueda sin sustento).
 
 ### 8. Modelo candidato y Model Registry
-- [ ] Decisión del modelo candidato justificada con métricas (documentar en `docs/decisiones.md`).
-- [ ] Pipeline completo (preprocesamiento + modelo) registrado en el Model Registry con signature e input_example.
-- [ ] Alias `champion` asignado y carga por alias verificada (`models:/<nombre>@champion` predice OK).
+- [x] **(2026-09-20)** Candidato decidido con evidencia: el mejor RF de Optuna (RMSE 68.142 USD). Justificación en `docs/decisiones.md`: ninguna de las 6 alternativas de la comparación de familias lo superó; hiperparámetros fijados en `configs/config.yaml` (`training.candidate`).
+- [x] **(2026-09-20)** Pipeline completo registrado vía `proyecto_final.flows.registry_flow`: `salarios-ai-ml-model` v1, con signature e input_example (muestra de datos crudos de validación).
+- [x] **(2026-09-20)** Alias `champion` asignado y verificado.
+  *Verificado:* flow de punta a punta OK — el reentrenamiento reprodujo el RMSE exacto (68.142), y `models:/salarios-ai-ml-model@champion` cargó y predijo sobre 5 filas crudas de validación. 22/22 tests y ruff en verde.
 
 ### 9. Orquestación end-to-end
 - [ ] Flow maestro de Prefect que encadena: adquisición → procesamiento → entrenamiento → registro.

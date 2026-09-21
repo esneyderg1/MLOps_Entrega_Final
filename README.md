@@ -19,10 +19,11 @@ El enunciado completo está en `Instrucciones.txt`.
 > **Estado:** dataset confirmado:
 > [The Global AI/ML/Data Science Salary for 2025](https://www.kaggle.com/datasets/samithsachidanandan/the-global-ai-ml-data-science-salary-for-2025)
 > (regresión sobre `salary_in_usd`, ficha en `docs/dataset.md`). Completados: EDA
-> (`notebooks/01_eda.ipynb`) y los flows de adquisición, procesamiento, baseline
-> y optimización con Optuna (ver tabla de flows). Mejor RMSE: **68.142 USD** (Optuna,
-> 0,59% mejor que el baseline de 68.547 — por debajo del ~10% esperado, limitación
-> documentada en `docs/decisiones.md`). Siguiente: modelo candidato y Model Registry.
+> (`notebooks/01_eda.ipynb`) y los flows de adquisición, procesamiento, baseline,
+> optimización con Optuna, comparación de familias y registro del candidato
+> (ver tabla de flows). **Champion registrado:** `salarios-ai-ml-model` v1
+> (RF de Optuna, RMSE 68.142 USD — techo en las features, documentado en
+> `docs/decisiones.md`). Siguiente: orquestación end-to-end.
 > Modalidad de despliegue por definir (`docs/decisiones.md`).
 
 ## Estructura del repositorio
@@ -110,6 +111,8 @@ Prefect Cloud son personales y **nunca se commitean**.
 | Procesamiento | `uv run python -m proyecto_final.flows.processing_flow` | Excluye columnas de leakage, parte train (≤2024) / validación (2025) y agrupa categorías raras (aprendidas solo de train) | `data/raw/salaries.csv`, `configs/config.yaml` (`features`) | `data/processed/train.parquet`, `validation.parquet`, `metadata.json` |
 | Baseline | `uv run python -m proyecto_final.flows.baseline_flow` | Entrena y trackea en MLflow el piso a superar: `dummy_median` (mediana) y `rf_baseline` (RandomForest simple), con el pipeline completo logueado. Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.baseline`) | 2 runs en el experimento `salarios-ai-ml` (RMSE baseline: 68.547 USD) |
 | Optimización (Optuna) | `uv run python -m proyecto_final.flows.optimization_flow` | Estudio de Optuna sobre el RandomForest (15 trials, espacio en `configs/config.yaml`): 1 parent run + 15 child runs `nested=True` en MLflow, cada uno con su pipeline completo logueado. Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.optuna`) | Parent run `rf-optuna-salarios` + 15 child runs; artifact `top_trials.json` (mejor RMSE: 68.142 USD) |
+| Comparación de familias | `uv run python -m proyecto_final.flows.comparison_flow` | Entrena 6 candidatos (lineal, ridge, gradient boosting × target USD/log1p) con la misma validación, para elegir el candidato con evidencia. Runs exploratorios (sin artefacto de modelo). Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.comparison`) | 6 runs `stage=model-comparison` (ninguno supera al RF de Optuna) |
+| Registro del candidato | `uv run python -m proyecto_final.flows.registry_flow` | Reentrena el candidato (`training.candidate`), lo registra como pipeline completo con signature e input_example, asigna el alias `champion` y verifica la carga por alias. Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.candidate`) | `salarios-ai-ml-model` v1 con alias `champion` en el Model Registry |
 
 ## Comandos útiles
 
@@ -133,7 +136,6 @@ sustentación que todos debemos poder responder.
 
 El avance del proyecto se lleva en el **Plan de trabajo (checklist)** al final de
 `CLAUDE.md`: una tarea solo se marca cuando está terminada, verificada y
-funcionando. Estado actual: **7/11 completadas** (scaffolding, selección del
-dataset, EDA, adquisición, procesamiento/feature engineering, baseline con
-tracking en MLflow y optimización con Optuna); la siguiente es **modelo
-candidato y Model Registry**.
+funcionando. Estado actual: **8/11 completadas** (hasta el registro del modelo
+candidato en el Model Registry con alias `champion`); la siguiente es la
+**orquestación end-to-end** (flow maestro).

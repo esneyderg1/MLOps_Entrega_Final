@@ -68,6 +68,15 @@ training:
   # y misma validación que el baseline, para decidir el candidato con evidencia.
   comparison:
     ridge_alpha: 1.0
+  # Modelo candidato (actividad 8): los mejores hiperparámetros del estudio de
+  # Optuna (2026-09-20, RMSE 68.142 USD). Elegido con evidencia: ninguna otra
+  # familia lo superó en la comparación (ver docs/decisiones.md).
+  candidate:
+    n_estimators: 125
+    max_depth: 28
+    min_samples_split: 11
+    min_samples_leaf: 2
+    max_features: "log2"
   optuna:
     study_name: "rf-optuna-salarios"
     n_top_trials: 5   # cuántos trials se resumen en el artifact del parent run
