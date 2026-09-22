@@ -174,7 +174,6 @@ de sustentación): es el documento con el que el equipo se pone al día.
   *Verificado:* 45/45 tests, `ruff check` ("All checks passed!") y `ruff format --check` (40 archivos formateados) en verde.
 - [x] **(2026-09-22)** README final: descripción del problema, instrucciones de ejecución paso a paso (pensado para el peer review), arquitectura del pipeline.
   *Verificado:* `README.md` con secciones "Problema de negocio", "Arquitectura del pipeline" (diagrama) y "Ejecución paso a paso (para peer review)" (clon limpio -> resultado final en 5 pasos), además de la sección "Despliegue" ya existente.
-- [ ] Verificar que cada integrante tiene al menos un commit (requisito de nota).
-  *Estado (2026-09-22):* `git log --format='%an <%ae>'` muestra commits de Carolina Uribe, Esneyder Gomez y Juanita Arango (`jmarangom`). **Yennifer Serna todavía no tiene ningún commit** — queda pendiente hasta que ella commitee el trabajo de las actividades 10 y 11 (Claude preparó los cambios; el commit lo hace ella, regla 4).
+- [x] **(2026-09-22)** Verificar que cada integrante tiene al menos un commit (requisito de nota).
+  *Verificado:* `git log --format='%an'` muestra commits de los 4 integrantes: Carolina Uribe, Esneyder Gomez, Juanita Arango (`jmarangom`) y Yennifer Serna (commits `e2c989c` y `1034a12`, actividades 10 y 11, ya en `origin/main`).
 - [ ] Preparar la presentación del proyecto.
-  *Estado (2026-09-22):* borrador del guion en `docs/presentacion.md` (7 slides + preguntas de sustentación), listo como punto de partida; falta construir las slides definitivas y ensayarla en equipo.
