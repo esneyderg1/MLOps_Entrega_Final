@@ -23,8 +23,8 @@ El enunciado completo está en `Instrucciones.txt`.
 > optimización con Optuna, comparación de familias y registro del candidato
 > (ver tabla de flows). **Champion registrado:** `salarios-ai-ml-model` v1
 > (RF de Optuna, RMSE 68.142 USD — techo en las features, documentado en
-> `docs/decisiones.md`). Siguiente: orquestación end-to-end.
-> Modalidad de despliegue por definir (`docs/decisiones.md`).
+> `docs/decisiones.md`). **Orquestación end-to-end lista:** `pipeline_flow` corre
+> todo el ciclo con un solo comando. Siguiente: despliegue.
 
 ## Estructura del repositorio
 
@@ -113,6 +113,7 @@ Prefect Cloud son personales y **nunca se commitean**.
 | Optimización (Optuna) | `uv run python -m proyecto_final.flows.optimization_flow` | Estudio de Optuna sobre el RandomForest (15 trials, espacio en `configs/config.yaml`): 1 parent run + 15 child runs `nested=True` en MLflow, cada uno con su pipeline completo logueado. Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.optuna`) | Parent run `rf-optuna-salarios` + 15 child runs; artifact `top_trials.json` (mejor RMSE: 68.142 USD) |
 | Comparación de familias | `uv run python -m proyecto_final.flows.comparison_flow` | Entrena 6 candidatos (lineal, ridge, gradient boosting × target USD/log1p) con la misma validación, para elegir el candidato con evidencia. Runs exploratorios (sin artefacto de modelo). Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.comparison`) | 6 runs `stage=model-comparison` (ninguno supera al RF de Optuna) |
 | Registro del candidato | `uv run python -m proyecto_final.flows.registry_flow` | Reentrena el candidato (`training.candidate`), lo registra como pipeline completo con signature e input_example, asigna el alias `champion` y verifica la carga por alias. Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.candidate`) | `salarios-ai-ml-model` v1 con alias `champion` en el Model Registry |
+| **Pipeline completo (end-to-end)** | `uv run python -m proyecto_final.flows.pipeline_flow` | Flow maestro: encadena adquisición → procesamiento → baseline → registro como subflows de Prefect. Con `--con-optimizacion` incluye además el estudio de Optuna. Requiere el MLflow server corriendo | `configs/config.yaml` | Todo lo anterior en una sola ejecución (~3 min): `data/`, runs en MLflow y `salarios-ai-ml-model` con alias `champion` |
 
 ## Comandos útiles
 

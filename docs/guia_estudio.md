@@ -4,8 +4,8 @@ Documento **vivo** para que cualquier integrante se ponga al día rápido: dónd
 vamos, cómo funciona lo construido, qué archivos leer y en qué orden. Se
 actualiza cada vez que se completa una actividad del checklist (CLAUDE.md).
 
-> **Última actualización:** 2026-09-20 — completadas las actividades 1–8 (8/11).
-> Siguiente: actividad 9 (orquestación end-to-end, flow maestro).
+> **Última actualización:** 2026-09-21 — completadas las actividades 1–9 (9/11).
+> Siguiente: actividad 10 (despliegue).
 
 ## 1. Dónde vamos (estado en una tabla)
 
@@ -19,7 +19,7 @@ actualiza cada vez que se completa una actividad del checklist (CLAUDE.md).
 | 6 | Baseline con MLflow | ✅ | dummy 78.233 USD / **rf_baseline 68.547 USD** (piso a superar) |
 | 7 | Optimización (Optuna) | ✅ | Mejor trial **68.142 USD** (solo 0,59% mejor — ver hallazgo abajo) |
 | 8 | Candidato + Registry | ✅ | `salarios-ai-ml-model` v1 con alias `champion` (`registry_flow`); RMSE reproducido 68.142 |
-| 9 | Orquestación end-to-end | ⬜ | Flow maestro que encadene todo |
+| 9 | Orquestación end-to-end | ✅ | `pipeline_flow`: 4 subflows encadenados, verificado desde datos vacíos. |
 | 10 | Despliegue | ⬜ | Modalidad por definir (batch / API / Docker) |
 | 11 | Calidad y presentación | ⬜ | README final, commits de todos, sustentación |
 
@@ -357,3 +357,4 @@ print(v.version, v.run_id, v.creation_timestamp)
 10. ¿Cómo recuperarías el modelo exacto del mejor trial sin reentrenar? *(cada trial guardó su `mlflow_run_id` — está en el artifact `top_trials.json` del parent run)*
 11. ¿Qué "precisión" tiene el modelo? *(no aplica accuracy en regresión; responder con la tabla de la sección 2: R² 0.234, error típico ~48 mil USD, 55% de predicciones dentro de ±30% — y el encuadre: estimador de referencia de mercado, no tasador)*
 12. ¿Por qué no usaron otra familia de modelos? *(sí se probó: lineal, Ridge y gradient boosting, con y sin log-target — todas en la banda ~68–69k; la evidencia está en los runs `stage=model-comparison`)*
+13. ¿Qué diferencia hay entre un flow y un subflow, y por qué el flow maestro no reescribió las etapas? *(llamar una función `@flow` dentro de otro flow crea un flow run anidado, visible en la UI de Prefect; reutilizar en vez de reescribir evita duplicar lógica y deja cada etapa corriendo también por separado)*
