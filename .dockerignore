@@ -1,0 +1,29 @@
+# Entorno y caches (se reconstruyen dentro de la imagen)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Control de versiones
+.git/
+.gitignore
+
+# Datos y artefactos de MLflow: no van dentro de la imagen (regla 4 de
+# CLAUDE.md); el modelo servido es SOLO models/champion/ (copiado antes del
+# build), no el resto de data/mlruns/mlflow.db.
+data/
+mlruns/
+mlflow.db
+
+# No forman parte del servicio en runtime
+notebooks/
+tests/
+docs/
+.vscode/
+
+# Documentación (no afecta al build, solo reduce contexto enviado al daemon).
+# README.md SÍ se necesita: pyproject.toml lo declara como `readme` del
+# paquete y uv lo exige presente para construirlo.
+*.md
+!README.md

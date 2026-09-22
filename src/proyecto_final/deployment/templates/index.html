@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Salarios AI/ML/Data Science 2025 - Predicción</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #1f2937; }
+        h1 { font-size: 1.4rem; }
+        form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        label { display: flex; flex-direction: column; font-size: 0.85rem; gap: 4px; }
+        input, select { padding: 6px 8px; font-size: 0.95rem; }
+        button { grid-column: span 2; padding: 10px; font-size: 1rem; cursor: pointer; background: #2563eb; color: white; border: none; border-radius: 6px; }
+        button:hover { background: #1d4ed8; }
+        #resultado { margin-top: 20px; padding: 16px; border-radius: 8px; background: #f3f4f6; display: none; }
+        #resultado.ok { display: block; }
+        .monto { font-size: 1.6rem; font-weight: bold; color: #047857; }
+        .meta { color: #6b7280; font-size: 0.85rem; }
+        .error { color: #b91c1c; }
+    </style>
+</head>
+<body>
+    <h1>Estimador de salario — roles de AI/ML/Data Science</h1>
+    <p class="meta">Predice el salario anual de referencia (USD) a partir del pipeline champion registrado en MLflow.</p>
+
+    <form id="form-prediccion">
+        <label>Año
+            <input type="number" name="work_year" value="2025" min="2020" max="2030" required>
+        </label>
+        <label>Seniority
+            <select name="experience_level">
+                <option value="EN">Entry (EN)</option>
+                <option value="MI">Mid (MI)</option>
+                <option value="SE" selected>Senior (SE)</option>
+                <option value="EX">Executive (EX)</option>
+            </select>
+        </label>
+        <label>Tipo de contrato
+            <select name="employment_type">
+                <option value="FT" selected>Full-time (FT)</option>
+                <option value="PT">Part-time (PT)</option>
+                <option value="CT">Contract (CT)</option>
+                <option value="FL">Freelance (FL)</option>
+            </select>
+        </label>
+        <label>Cargo
+            <input type="text" name="job_title" value="Data Scientist" required>
+        </label>
+        <label>País de residencia (ISO-2)
+            <input type="text" name="employee_residence" value="US" maxlength="2" required>
+        </label>
+        <label>Modalidad remota
+            <select name="remote_ratio">
+                <option value="0">Presencial (0)</option>
+                <option value="50">Híbrido (50)</option>
+                <option value="100" selected>Remoto total (100)</option>
+            </select>
+        </label>
+        <label>País de la empresa (ISO-2)
+            <input type="text" name="company_location" value="US" maxlength="2" required>
+        </label>
+        <label>Tamaño de la empresa
+            <select name="company_size">
+                <option value="S">Pequeña (S)</option>
+                <option value="M" selected>Mediana (M)</option>
+                <option value="L">Grande (L)</option>
+            </select>
+        </label>
+        <button type="submit">Predecir salario</button>
+    </form>
+
+    <div id="resultado"></div>
+
+    <script>
+        const form = document.getElementById('form-prediccion');
+        const resultado = document.getElementById('resultado');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const data = Object.fromEntries(new FormData(form).entries());
+            data.work_year = parseInt(data.work_year, 10);
+            data.remote_ratio = parseInt(data.remote_ratio, 10);
+
+            resultado.className = 'ok';
+            resultado.innerHTML = 'Prediciendo...';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                const body = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(body.detail || 'Error desconocido');
+                }
+
+                resultado.innerHTML = `
+                    <div class="monto">$${body.predicted_salary_usd.toLocaleString('en-US')} USD</div>
+                    <div class="meta">Modelo ${body.model_name} v${body.model_version} (alias ${body.model_alias})</div>
+                `;
+            } catch (error) {
+                resultado.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
