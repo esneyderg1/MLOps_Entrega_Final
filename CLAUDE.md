@@ -8,7 +8,7 @@ Proyecto final de la materia **MLOps / Aprendizaje en la nube** (Universidad de 
 
 **Alcance:** hasta el despliegue. **NO incluye monitoreo** (fuera del alcance de la entrega).
 
-**Estado actual:** scaffolding listo y entorno funcionando. Dataset **confirmado**: *The Global AI/ML/Data Science Salary for 2025* (Kaggle) — regresión sobre `salary_in_usd`, ficha completa en `docs/dataset.md` y parámetros en `configs/config.yaml`. Aval del equipo y de la profesora obtenido (fuente Kaggle + unicidad verificada). **EDA completado** (`notebooks/01_eda.ipynb`): sin nulos, duplicados y atípicos altos legítimos (se conservan), partición temporal train≤2024/validación 2025 confirmada. **Adquisición de datos automatizada completada**: flow de Prefect en `proyecto_final.flows.acquisition_flow` descarga el dataset y genera `metadata.json` de punta a punta. **Procesamiento y feature engineering completado**: `proyecto_final.flows.processing_flow` genera `data/processed/` (train ≤2024 / validación 2025, sin leakage, categorías raras agrupadas) y `proyecto_final.features.preprocessing.build_preprocessor` queda listo para la etapa de entrenamiento. El equipo trabaja los flows en **Prefect Cloud** con código agnóstico al servidor (regla 3). **Baseline completado**: `proyecto_final.flows.baseline_flow` trackea `dummy_median` y `rf_baseline` en el experimento `salarios-ai-ml` (RMSE a superar: 68.547 USD). **Optimización con Optuna completada**: `proyecto_final.flows.optimization_flow` corrió 15 trials (parent + child runs `nested=True`); mejor RMSE 68.142 USD, solo 0.59% de mejora sobre el baseline (muy por debajo del ~10% esperado — limitación real documentada en `docs/decisiones.md`, no de los hiperparámetros sino de las features disponibles). **Modelo candidato registrado**: `proyecto_final.flows.registry_flow` registró el mejor RF de Optuna como `salarios-ai-ml-model` v1 con alias `champion` (signature + input_example). **Orquestación end-to-end completada**: `proyecto_final.flows.pipeline_flow` encadena adquisición → procesamiento → baseline → registro como subflows de Prefect y corre todo el ciclo con un solo comando (verificado desde `data/` vacío: 2m 39s, RMSE 68.547 baseline / 68.142 champion). Siguiente paso: definir la modalidad de despliegue (actividad 10). La forma de despliegue AÚN NO está definida (batch, web service con API, o Docker): no implementar nada de deployment hasta que el equipo lo decida y se actualice este archivo.
+**Estado actual:** scaffolding listo y entorno funcionando. Dataset **confirmado**: *The Global AI/ML/Data Science Salary for 2025* (Kaggle) — regresión sobre `salary_in_usd`, ficha completa en `docs/dataset.md` y parámetros en `configs/config.yaml`. Aval del equipo y de la profesora obtenido (fuente Kaggle + unicidad verificada). **EDA completado** (`notebooks/01_eda.ipynb`): sin nulos, duplicados y atípicos altos legítimos (se conservan), partición temporal train≤2024/validación 2025 confirmada. **Adquisición de datos automatizada completada**: flow de Prefect en `proyecto_final.flows.acquisition_flow` descarga el dataset y genera `metadata.json` de punta a punta. **Procesamiento y feature engineering completado**: `proyecto_final.flows.processing_flow` genera `data/processed/` (train ≤2024 / validación 2025, sin leakage, categorías raras agrupadas) y `proyecto_final.features.preprocessing.build_preprocessor` queda listo para la etapa de entrenamiento. El equipo trabaja los flows en **Prefect Cloud** con código agnóstico al servidor (regla 3). **Baseline completado**: `proyecto_final.flows.baseline_flow` trackea `dummy_median` y `rf_baseline` en el experimento `salarios-ai-ml` (RMSE a superar: 68.547 USD). **Optimización con Optuna completada**: `proyecto_final.flows.optimization_flow` corrió 15 trials (parent + child runs `nested=True`); mejor RMSE 68.142 USD, solo 0.59% de mejora sobre el baseline (muy por debajo del ~10% esperado — limitación real documentada en `docs/decisiones.md`, no de los hiperparámetros sino de las features disponibles). **Modelo candidato registrado**: `proyecto_final.flows.registry_flow` registró el mejor RF de Optuna como `salarios-ai-ml-model` v1 con alias `champion` (signature + input_example). **Orquestación end-to-end completada**: `proyecto_final.flows.pipeline_flow` encadena adquisición → procesamiento → baseline → registro como subflows de Prefect y corre todo el ciclo con un solo comando (verificado desde `data/` vacío: 2m 39s, RMSE 68.547 baseline / 68.142 champion). **Despliegue completado (actividad 10)**: web service con FastAPI empaquetado en Docker (`src/proyecto_final/deployment/`). `copy_model.py` copia el pipeline con alias `champion` del Model Registry a `models/champion/` (no versionado); `app.py` lo sirve por `/predict`, `/predict/batch`, `/health` y una interfaz web en `/`, sin depender del Tracking Server en runtime (verificado apagando MLflow). La imagen Docker (`Dockerfile` + `docker-compose.yml` en la raíz) queda autocontenida: el modelo se copia a disco ANTES del build, no en el contenedor. Siguiente paso: cierre de calidad y documentación final (actividad 11).
 
 ## Regla 1 — Gestión de entorno y dependencias: SOLO con uv
 
@@ -55,16 +55,18 @@ MLOps_Entrega_Final/
 ├── README.md              # documentación principal de la entrega
 ├── Instrucciones.txt      # enunciado de la entrega (no modificar)
 ├── pyproject.toml         # dependencias (gestionado con uv)
+├── Dockerfile             # imagen del servicio de predicción (actividad 10)
+├── docker-compose.yml     # levanta el servicio con un comando + healthcheck
 ├── configs/               # configuración (dataset, mlflow, parámetros) en YAML
 ├── data/                  # datos locales (NO se versionan; carpetas raw/ y processed/)
-├── models/                # artefactos locales de modelos (NO se versionan)
+├── models/                # artefactos locales de modelos (NO se versionan; incluye champion/)
 ├── notebooks/             # solo EDA y exploración
 ├── src/proyecto_final/    # código fuente (paquete Python)
 │   ├── data/              #   adquisición y validación de datos
 │   ├── features/          #   procesamiento y feature engineering
 │   ├── models/            #   entrenamiento, optimización, evaluación, registro
 │   ├── flows/             #   flows de Prefect que orquestan todo
-│   └── deployment/        #   despliegue (vacío hasta definir la modalidad)
+│   └── deployment/        #   servicio FastAPI: copy_model, model_loader, schemas, app
 ├── tests/unit/            # tests con pytest
 └── docs/                  # decisiones técnicas y guías
 ```
@@ -161,12 +163,18 @@ de sustentación): es el documento con el que el equipo se pone al día.
   *Verificado:* 25/25 tests y ruff en verde; `rf_baseline` RMSE 68.547 y champion `salarios-ai-ml-model` v1 RMSE 68.142 (números exactos reproducidos) en la misma corrida.
 
 ### 10. Despliegue del modelo candidato
-- [ ] Decidir modalidad: batch / web service (FastAPI) / Docker. Documentar en `docs/decisiones.md` y actualizar "Estado actual".
-- [ ] Implementar el despliegue en `src/proyecto_final/deployment/` consumiendo el modelo por alias desde el Registry.
-- [ ] Predicción de prueba end-to-end verificada (el alcance llega hasta aquí: SIN monitoreo).
+- [x] **(2026-09-22)** Modalidad decidida: web service con FastAPI empaquetado en Docker. Documentado en `docs/decisiones.md` y en "Estado actual".
+- [x] **(2026-09-22)** Despliegue implementado en `src/proyecto_final/deployment/`: `copy_model.py` (copia el champion del Registry a `models/champion/`), `model_loader.py` (lo carga en memoria desde disco), `schemas.py` (Pydantic) y `app.py` (FastAPI: `/`, `/health`, `/predict`, `/predict/batch`). `Dockerfile`, `.dockerignore` y `docker-compose.yml` en la raíz.
+  *Verificado:* 14 tests nuevos en `tests/unit/` (schemas, model_loader, copy_model, app) — 45/45 tests y `ruff check`/`format` en verde sobre todo el repo.
+- [x] **(2026-09-22)** Predicción de prueba end-to-end verificada (alcance hasta aquí: SIN monitoreo).
+  *Verificado:* pipeline completo corrido de punta a punta (adquisición → procesamiento → baseline → registro) reprodujo los números documentados (dummy 78.233 / rf_baseline 68.547 / champion 68.142 USD). `copy_model.py` copió el champion v1 a `models/champion/`. La API local (`uv run uvicorn proyecto_final.deployment.app:app`) respondió en `/health`, `/predict` y `/predict/batch` con el MLflow Tracking Server **apagado** (confirma que no depende de él en runtime). La imagen Docker (`docker build .` + `docker compose up`) levantó el contenedor con estado `healthy` y los mismos endpoints respondieron igual dentro del contenedor.
 
 ### 11. Calidad y documentación final
-- [ ] `uv run ruff check .` y `uv run pytest` en verde sobre todo el repo.
-- [ ] README final: descripción del problema, instrucciones de ejecución paso a paso (pensado para el peer review), arquitectura del pipeline.
+- [x] **(2026-09-22)** `uv run ruff check .` y `uv run pytest` en verde sobre todo el repo.
+  *Verificado:* 45/45 tests, `ruff check` ("All checks passed!") y `ruff format --check` (40 archivos formateados) en verde.
+- [x] **(2026-09-22)** README final: descripción del problema, instrucciones de ejecución paso a paso (pensado para el peer review), arquitectura del pipeline.
+  *Verificado:* `README.md` con secciones "Problema de negocio", "Arquitectura del pipeline" (diagrama) y "Ejecución paso a paso (para peer review)" (clon limpio -> resultado final en 5 pasos), además de la sección "Despliegue" ya existente.
 - [ ] Verificar que cada integrante tiene al menos un commit (requisito de nota).
+  *Estado (2026-09-22):* `git log --format='%an <%ae>'` muestra commits de Carolina Uribe, Esneyder Gomez y Juanita Arango (`jmarangom`). **Yennifer Serna todavía no tiene ningún commit** — queda pendiente hasta que ella commitee el trabajo de las actividades 10 y 11 (Claude preparó los cambios; el commit lo hace ella, regla 4).
 - [ ] Preparar la presentación del proyecto.
+  *Estado (2026-09-22):* borrador del guion en `docs/presentacion.md` (7 slides + preguntas de sustentación), listo como punto de partida; falta construir las slides definitivas y ensayarla en equipo.

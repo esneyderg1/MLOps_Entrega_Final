@@ -4,8 +4,8 @@ Documento **vivo** para que cualquier integrante se ponga al día rápido: dónd
 vamos, cómo funciona lo construido, qué archivos leer y en qué orden. Se
 actualiza cada vez que se completa una actividad del checklist (CLAUDE.md).
 
-> **Última actualización:** 2026-09-21 — completadas las actividades 1–9 (9/11).
-> Siguiente: actividad 10 (despliegue).
+> **Última actualización:** 2026-09-22 — completadas las actividades 1–10 (10/11).
+> Siguiente: actividad 11 (calidad y documentación final).
 
 ## 1. Dónde vamos (estado en una tabla)
 
@@ -20,7 +20,7 @@ actualiza cada vez que se completa una actividad del checklist (CLAUDE.md).
 | 7 | Optimización (Optuna) | ✅ | Mejor trial **68.142 USD** (solo 0,59% mejor — ver hallazgo abajo) |
 | 8 | Candidato + Registry | ✅ | `salarios-ai-ml-model` v1 con alias `champion` (`registry_flow`); RMSE reproducido 68.142 |
 | 9 | Orquestación end-to-end | ✅ | `pipeline_flow`: 4 subflows encadenados, verificado desde datos vacíos. |
-| 10 | Despliegue | ⬜ | Modalidad por definir (batch / API / Docker) |
+| 10 | Despliegue | ✅ | Web service FastAPI + Docker; sirve el champion copiado a disco, sin depender de MLflow en runtime |
 | 11 | Calidad y presentación | ⬜ | README final, commits de todos, sustentación |
 
 ## 2. Cómo funciona lo construido (el cuento de punta a punta)
@@ -52,7 +52,14 @@ Kaggle ──► acquisition_flow ──► data/raw/salaries.csv + metadata.jso
                 ▼ registry_flow ────────► Model Registry
    reentrena el candidato (RMSE reproducido: 68.142) y lo registra:
    salarios-ai-ml-model v1  ──  alias "champion"
-   el deploy consumirá: models:/salarios-ai-ml-model@champion
+                │
+                ▼ deployment.copy_model ─► models/champion/ (disco, NO versionado)
+   copia el pipeline con alias "champion" a disco + deployment_metadata.json
+   (versión, run_id, métricas) — el servicio ya NO llama a MLflow para predecir
+                │
+                ▼ deployment.app (FastAPI) ─► API en :8000 (o Docker en :8000)
+   carga models/champion/ UNA vez al iniciar; expone /, /health, /predict,
+   /predict/batch — responde aunque el MLflow Tracking Server esté apagado
 ```
 
 **Qué queda trackeado en MLflow por cada entrenamiento:** parámetros, métricas
@@ -120,6 +127,14 @@ mismo error. La rúbrica evalúa el pipeline y el método, no el R².
 | `flows/baseline_flow.py` | `train_and_log_task` = EL patrón MLflow completo: start_run → tags → params → fit → métricas → log_model |
 | `flows/optimization_flow.py` | Parent run que envuelve el estudio; `objective` abre un child run por trial (`nested=True`); `trial.set_user_attr("mlflow_run_id", ...)` conecta Optuna↔MLflow |
 
+### Nivel 3.5 — el despliegue (actividad 10, 15 min)
+| Archivo | Qué entender |
+|---|---|
+| `src/proyecto_final/deployment/copy_model.py` | Por qué el deploy NO habla con MLflow en runtime: copia el pipeline del alias `champion` a disco (`models/champion/`) antes del build/arranque |
+| `src/proyecto_final/deployment/model_loader.py` | `ModelLoader.load()` se llama UNA vez (en el lifespan de FastAPI, no por request); `predict()` selecciona solo las columnas declaradas en config |
+| `src/proyecto_final/deployment/app.py` | Los 4 endpoints (`/`, `/health`, `/predict`, `/predict/batch`) y por qué el modelo se carga en el `lifespan`, no en cada request |
+| `Dockerfile` | Dos capas de `uv sync` (dependencias primero, luego el paquete) para aprovechar el cache; por qué el `CMD` llama al binario del venv y no a `uv run` |
+
 ### Nivel 4 — apoyo (lectura diagonal)
 | Archivo | Qué entender |
 |---|---|
@@ -177,6 +192,14 @@ runs de MLflow). Si entiendes eso, entiendes por qué cada cosa vive donde vive.
 | `build_ordinal_preprocessor()` | OrdinalEncoder (+ `unknown_value=-1`) para árboles | HistGradientBoosting no acepta matrices dispersas del OneHot; a los árboles les basta el ordinal |
 | `with_log_target()` | Envuelve un pipeline para entrenar en `log1p(y)` y predecir en USD | Probar la sugerencia del EDA sin duplicar código de métricas (expm1 destransforma solo) |
 | `candidate_pipelines()` | Los 6 candidatos: 3 familias × 2 targets | Comparación justa: mismos datos, misma validación, pipelines completos |
+
+**`deployment/` — servicio de predicción (actividad 10)**
+| Función/archivo | Qué hace | Por qué existe |
+|---|---|---|
+| `copy_model.copy_champion_to_disk()` | Descarga el pipeline con alias `champion` y lo guarda en `models/champion/` + `deployment_metadata.json` (versión, run_id, métricas) | El servicio no depende del Tracking Server en runtime; dentro de Docker, `127.0.0.1:5000` apuntaría al contenedor, no al host |
+| `model_loader.ModelLoader` | Carga el pipeline y su metadata UNA vez (`load()`) y expone `predict()` | Cargar el modelo en cada request sería carísimo; `load()` se llama en el `lifespan` de FastAPI |
+| `schemas.py` | Modelos Pydantic (`SalaryRequest`, `BatchSalaryRequest`, `PredictionResponse`, `HealthResponse`) | Los códigos categóricos (EN/MI/SE/EX, S/M/L, etc.) se validan en la frontera, antes de llegar al modelo |
+| `app.py` | FastAPI: `/` (interfaz web), `/health`, `/predict`, `/predict/batch` | El único punto de entrada del servicio; `/docs` (Swagger) queda gratis por FastAPI |
 
 **Los flows y sus tasks (orquestación)**
 | Flow | Tasks | Qué orquesta |
@@ -294,15 +317,42 @@ cargando `models:/salarios-ai-ml-model@champion` y prediciendo 5 filas.
 Si lo corres otra vez crea v2, v3... y el alias se mueve a la última — ese es el
 comportamiento correcto de un registry (versionado).
 
-### Paso 8 — Cierre
+### Paso 8 — Despliegue (actividad 10)
+
+```bash
+uv run python -m proyecto_final.deployment.copy_model
+uv run uvicorn proyecto_final.deployment.app:app --host 0.0.0.0 --port 8000
+```
+
+*Qué hace:* copia el pipeline con alias `champion` a `models/champion/`
+(deja de depender del Tracking Server) y levanta la API. Abre
+http://localhost:8000 para la interfaz web, o http://localhost:8000/docs
+para el Swagger.
+**✅ Criterio:** `GET /health` responde `"status": "healthy"` con el RMSE del
+champion — **incluso apagando el MLflow server**, prueba de que el servicio
+ya no depende de él. `POST /predict` con un puesto válido devuelve
+`predicted_salary_usd`.
+
+Alternativa con Docker (requiere haber corrido `copy_model` antes, igual que
+arriba — la imagen copia `models/champion/` tal cual esté en ese momento):
+
+```bash
+docker compose up --build
+```
+
+**✅ Criterio:** `docker compose ps` muestra el contenedor `(healthy)`; los
+mismos endpoints responden en `http://localhost:8000`.
+
+### Paso 9 — Cierre
 
 ```bash
 uv run pytest && uv run ruff check .
 ```
 
-**✅ Éxito total:** 22 tests · 78.233 / 68.547 / 68.142 exactos (pasos 4 y 7) ·
+**✅ Éxito total:** 45 tests · 78.233 / 68.547 / 68.142 exactos (pasos 4 y 7) ·
 Optuna y comparación en la banda 68–69k · 15 child runs anidados · champion
-carga por alias y predice · los 6 flows en verde en Prefect.
+carga por alias y predice · los 6 flows en verde en Prefect · API y contenedor
+Docker responden `/health` sin el Tracking Server corriendo.
 
 ### Cómo revisar el champion registrado (3 formas)
 
@@ -358,3 +408,5 @@ print(v.version, v.run_id, v.creation_timestamp)
 11. ¿Qué "precisión" tiene el modelo? *(no aplica accuracy en regresión; responder con la tabla de la sección 2: R² 0.234, error típico ~48 mil USD, 55% de predicciones dentro de ±30% — y el encuadre: estimador de referencia de mercado, no tasador)*
 12. ¿Por qué no usaron otra familia de modelos? *(sí se probó: lineal, Ridge y gradient boosting, con y sin log-target — todas en la banda ~68–69k; la evidencia está en los runs `stage=model-comparison`)*
 13. ¿Qué diferencia hay entre un flow y un subflow, y por qué el flow maestro no reescribió las etapas? *(llamar una función `@flow` dentro de otro flow crea un flow run anidado, visible en la UI de Prefect; reutilizar en vez de reescribir evita duplicar lógica y deja cada etapa corriendo también por separado)*
+14. ¿Por qué el servicio de despliegue no llama a MLflow para predecir? *(copia el pipeline con alias `champion` a disco ANTES de arrancar (`copy_model.py`); dentro de Docker, `127.0.0.1:5000` apuntaría al propio contenedor, no al Tracking Server del host — copiar el modelo evita esa dependencia de red en runtime)*
+15. ¿Qué pasa si llega un `job_title` o país que el modelo nunca vio en entrenamiento? *(el `OneHotEncoder(handle_unknown="ignore")` lo codifica como todo-ceros; no es exactamente lo mismo que la categoría `"OTHER"` — esa agrupación solo ocurre en `processing_flow`, antes de entrenar — pero el efecto es equivalente: ninguna señal categórica específica aporta a la predicción; documentado en `docs/decisiones.md`)*

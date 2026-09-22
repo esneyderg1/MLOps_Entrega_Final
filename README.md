@@ -16,6 +16,41 @@ Orquestar con **Prefect** el ciclo de vida completo de un modelo de Machine Lear
 optimización, registro y versionado en **MLflow**) y desplegar un modelo candidato.
 El enunciado completo está en `Instrucciones.txt`.
 
+## Problema de negocio
+
+Un área de compensación/atracción de talento necesita estimar el salario de
+mercado en USD para roles de datos e IA al momento de publicar una vacante o
+preparar una oferta. El modelo entrega un salario de referencia según el rol,
+seniority, tipo de contrato, ubicación, modalidad remota y tamaño de la
+empresa, para reducir ofertas desalineadas con el mercado. Ficha completa del
+dataset, diccionario de datos y riesgos identificados en
+[`docs/dataset.md`](docs/dataset.md).
+
+## Arquitectura del pipeline
+
+```
+Kaggle ──► acquisition_flow ──► data/raw/salaries.csv + metadata.json (sha256)
+                │
+                ▼ processing_flow
+   quita salary/salary_currency (leakage) · parte train ≤2024 / validación 2025
+   agrupa categorías raras en "OTHER" (aprendidas SOLO de train)
+                │
+                ▼ data/processed/train.parquet + validation.parquet
+                │
+                ▼ baseline_flow ──────────► MLflow: dummy_median + rf_baseline
+                ▼ optimization_flow ──────► MLflow: 15 trials con Optuna (parent + childs)
+                ▼ comparison_flow ────────► MLflow: 6 runs exploratorios (otras familias)
+                ▼ registry_flow ──────────► Model Registry: salarios-ai-ml-model @champion
+                │
+                ▼ deployment.copy_model ──► models/champion/ (copia local, sin red a MLflow)
+                ▼ deployment.app (FastAPI) ► API en :8000 — local o en Docker
+```
+
+Cada flecha corre con un solo comando (ver tabla de flows más abajo);
+`pipeline_flow` encadena adquisición → procesamiento → baseline → registro en
+una sola ejecución. Detalle completo, decisiones y preguntas de sustentación
+en [`docs/guia_estudio.md`](docs/guia_estudio.md).
+
 > **Estado:** dataset confirmado:
 > [The Global AI/ML/Data Science Salary for 2025](https://www.kaggle.com/datasets/samithsachidanandan/the-global-ai-ml-data-science-salary-for-2025)
 > (regresión sobre `salary_in_usd`, ficha en `docs/dataset.md`). Completados: EDA
@@ -24,7 +59,9 @@ El enunciado completo está en `Instrucciones.txt`.
 > (ver tabla de flows). **Champion registrado:** `salarios-ai-ml-model` v1
 > (RF de Optuna, RMSE 68.142 USD — techo en las features, documentado en
 > `docs/decisiones.md`). **Orquestación end-to-end lista:** `pipeline_flow` corre
-> todo el ciclo con un solo comando. Siguiente: despliegue.
+> todo el ciclo con un solo comando. **Despliegue listo:** web service con
+> FastAPI empaquetado en Docker (ver sección Despliegue más abajo). Siguiente:
+> cierre de calidad y documentación final.
 
 ## Estructura del repositorio
 
@@ -32,16 +69,18 @@ El enunciado completo está en `Instrucciones.txt`.
 ├── CLAUDE.md              # reglas de trabajo del proyecto (leer primero)
 ├── Instrucciones.txt      # enunciado de la entrega
 ├── pyproject.toml         # dependencias (gestionado con uv)
+├── Dockerfile             # imagen del servicio de predicción
+├── docker-compose.yml     # levanta el servicio con un comando + healthcheck
 ├── configs/               # configuración central (YAML)
 ├── data/                  # datos locales (no versionados): raw/ y processed/
-├── models/                # artefactos locales de modelos (no versionados)
+├── models/                # artefactos locales de modelos (no versionados; incluye champion/)
 ├── notebooks/             # EDA y exploración
 ├── src/proyecto_final/    # código fuente
 │   ├── data/              # adquisición y validación de datos
 │   ├── features/          # procesamiento y feature engineering
 │   ├── models/            # entrenamiento, optimización y registro
 │   ├── flows/             # flows de Prefect (orquestación)
-│   └── deployment/        # despliegue (pendiente de definir modalidad)
+│   └── deployment/        # servicio FastAPI: copy_model, model_loader, schemas, app
 ├── tests/unit/            # tests con pytest
 └── docs/                  # decisiones técnicas y guías
 ```
@@ -89,6 +128,40 @@ uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///
 
 UI de MLflow: http://127.0.0.1:5000
 
+## Ejecución paso a paso (para peer review)
+
+Para correr el proyecto completo desde un clon limpio, en orden:
+
+```bash
+# 1. Entorno
+git clone git@github.com:esneyderg1/MLOps_Entrega_Final.git
+cd MLOps_Entrega_Final
+uv sync
+
+# 2. MLflow Tracking Server (déjalo corriendo en una terminal aparte)
+uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///mlflow.db \
+  --default-artifact-root ./mlruns --allowed-hosts "localhost,127.0.0.1,127.0.0.1:5000"
+
+# 3. Pipeline completo (adquisición -> procesamiento -> baseline -> registro)
+#    ~3 minutos; usa data/ vacío, no requiere pasos manuales
+uv run python -m proyecto_final.flows.pipeline_flow
+
+# 4. Copiar el champion registrado y levantar la API de predicción
+uv run python -m proyecto_final.deployment.copy_model
+uv run uvicorn proyecto_final.deployment.app:app --host 0.0.0.0 --port 8000
+# (o, en Docker: docker compose up --build)
+
+# 5. Verificación de calidad
+uv run pytest
+uv run ruff check .
+```
+
+Con eso: MLflow tiene el experimento `salarios-ai-ml` con todos los runs, el
+Model Registry tiene `salarios-ai-ml-model` con alias `champion`, y
+http://localhost:8000 responde predicciones. El runbook detallado — con el
+criterio de éxito de cada paso y los números exactos esperados — está en
+[`docs/guia_estudio.md`](docs/guia_estudio.md#4-runbook-correr-y-validar-todo-paso-a-paso).
+
 ## Flows de Prefect
 
 Cada flow corre de punta a punta con un solo comando (regla 3 de `CLAUDE.md`).
@@ -115,6 +188,96 @@ Prefect Cloud son personales y **nunca se commitean**.
 | Registro del candidato | `uv run python -m proyecto_final.flows.registry_flow` | Reentrena el candidato (`training.candidate`), lo registra como pipeline completo con signature e input_example, asigna el alias `champion` y verifica la carga por alias. Requiere el MLflow server corriendo | `data/processed/`, `configs/config.yaml` (`training.candidate`) | `salarios-ai-ml-model` v1 con alias `champion` en el Model Registry |
 | **Pipeline completo (end-to-end)** | `uv run python -m proyecto_final.flows.pipeline_flow` | Flow maestro: encadena adquisición → procesamiento → baseline → registro como subflows de Prefect. Con `--con-optimizacion` incluye además el estudio de Optuna. Requiere el MLflow server corriendo | `configs/config.yaml` | Todo lo anterior en una sola ejecución (~3 min): `data/`, runs en MLflow y `salarios-ai-ml-model` con alias `champion` |
 
+## Despliegue
+
+Modalidad elegida (actividad 10, documentada en `docs/decisiones.md`): **web
+service con FastAPI, empaquetado en Docker**. El servicio NO se conecta al
+Tracking Server para predecir — consume una copia local congelada del
+champion, así que ni la API ni el contenedor dependen de que MLflow esté
+corriendo en ese momento.
+
+### Paso 1 — Copiar el champion a disco
+
+Con el MLflow Tracking Server corriendo y un modelo con alias `champion` ya
+registrado (`uv run python -m proyecto_final.flows.registry_flow`):
+
+```bash
+uv run python -m proyecto_final.deployment.copy_model
+```
+
+Esto descarga el pipeline completo (preprocesador + modelo) a
+`models/champion/` junto con su metadata (versión, run_id, métricas). Hay que
+repetir este paso cada vez que el alias `champion` se mueva a una versión
+nueva.
+
+### Paso 2A — Correr la API en local (sin Docker)
+
+```bash
+uv run uvicorn proyecto_final.deployment.app:app --host 0.0.0.0 --port 8000
+```
+
+- Interfaz web: http://localhost:8000
+- Documentación interactiva (Swagger): http://localhost:8000/docs
+
+### Paso 2B — Correr la API con Docker
+
+```bash
+docker compose up --build
+```
+
+(equivalente sin compose: `docker build -t salarios-ai-ml-api .` seguido de
+`docker run -p 8000:8000 salarios-ai-ml-api`). La imagen copia `models/champion/`
+tal cual esté en el momento del build — repite el Paso 1 antes de reconstruirla
+si el champion cambió.
+
+### Endpoints
+
+| Endpoint | Método | Descripción |
+|---|---|---|
+| `/` | GET | Interfaz web para probar predicciones sin curl/Postman |
+| `/health` | GET | Health check: modelo cargado, versión, RMSE |
+| `/predict` | POST | Predicción de un solo puesto |
+| `/predict/batch` | POST | Predicción de hasta 1000 puestos en una llamada |
+| `/docs` | GET | Documentación interactiva (Swagger UI) |
+
+Ejemplo de `/predict`:
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "work_year": 2025,
+    "experience_level": "SE",
+    "employment_type": "FT",
+    "job_title": "Data Scientist",
+    "employee_residence": "US",
+    "remote_ratio": 100,
+    "company_location": "US",
+    "company_size": "M"
+  }'
+```
+
+Respuesta esperada:
+
+```json
+{
+  "predicted_salary_usd": 162537.71,
+  "model_name": "salarios-ai-ml-model",
+  "model_version": "1",
+  "model_alias": "champion"
+}
+```
+
+### Troubleshooting: puerto 5000 ocupado en macOS
+
+En macOS, **AirPlay Receiver** escucha por defecto en el puerto 5000 (el mismo
+que usa `configs/config.yaml` para MLflow) y responde con `403 Forbidden` en
+vez de dejarlo libre. Si `uv run mlflow server ... --port 5000` no arranca o
+`copy_model.py` falla con un error de conexión, desactívalo en **Ajustes del
+Sistema → General → AirDrop y Handoff → Recepción de AirPlay** (o **Compartir
+→ Recepción de AirPlay** en versiones anteriores de macOS) y vuelve a levantar
+el server.
+
 ## Comandos útiles
 
 ```bash
@@ -137,6 +300,6 @@ sustentación que todos debemos poder responder.
 
 El avance del proyecto se lleva en el **Plan de trabajo (checklist)** al final de
 `CLAUDE.md`: una tarea solo se marca cuando está terminada, verificada y
-funcionando. Estado actual: **8/11 completadas** (hasta el registro del modelo
-candidato en el Model Registry con alias `champion`); la siguiente es la
-**orquestación end-to-end** (flow maestro).
+funcionando. Estado actual: **10/11 completadas** (hasta el despliegue del
+modelo candidato); la siguiente es el cierre de **calidad y documentación
+final** (actividad 11).
