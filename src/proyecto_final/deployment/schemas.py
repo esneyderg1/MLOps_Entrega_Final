@@ -43,14 +43,24 @@ class SalaryRequest(BaseModel):
         description="Cargo (texto libre; el modelo se entrenó con los 15 más frecuentes + OTHER)",
     )
     employee_residence: str = Field(
-        ..., min_length=2, max_length=2, description="País de residencia (código ISO-2)"
+        ...,
+        pattern=r"^([A-Z]{2}|OTHER)$",
+        description=(
+            "País de residencia: código ISO-2, u 'OTHER' para países fuera de "
+            "US/CA/GB (el modelo se entrenó agrupándolos como 'resto del mundo')"
+        ),
     )
     remote_ratio: Literal[0, 50, 100] = Field(
         ...,
         description="% de trabajo remoto: 0 presencial, 50 híbrido, 100 remoto total",
     )
     company_location: str = Field(
-        ..., min_length=2, max_length=2, description="País de la empresa (código ISO-2)"
+        ...,
+        pattern=r"^([A-Z]{2}|OTHER)$",
+        description=(
+            "País de la empresa: código ISO-2, u 'OTHER' para países fuera de "
+            "US/CA/GB (mismo agrupamiento del entrenamiento)"
+        ),
     )
     company_size: Literal["S", "M", "L"] = Field(
         ..., description="Tamaño de la empresa: Small, Medium, Large"

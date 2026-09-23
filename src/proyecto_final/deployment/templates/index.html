@@ -2,70 +2,246 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Salarios AI/ML/Data Science 2025 - Predicción</title>
     <style>
-        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #1f2937; }
-        h1 { font-size: 1.4rem; }
-        form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-        label { display: flex; flex-direction: column; font-size: 0.85rem; gap: 4px; }
-        input, select { padding: 6px 8px; font-size: 0.95rem; }
-        button { grid-column: span 2; padding: 10px; font-size: 1rem; cursor: pointer; background: #2563eb; color: white; border: none; border-radius: 6px; }
-        button:hover { background: #1d4ed8; }
-        #resultado { margin-top: 20px; padding: 16px; border-radius: 8px; background: #f3f4f6; display: none; }
+        :root {
+            --rojo: #b5121b;
+            --rojo-oscuro: #8c0e15;
+            --tinta: #1f2430;
+            --gris: #5b6472;
+            --fondo: #f7f6f3;
+            --verde: #1e7d5a;
+            --borde: #e3e1db;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: var(--fondo);
+            color: var(--tinta);
+            max-width: 780px;
+            margin: 36px auto;
+            padding: 0 16px;
+        }
+        h1 { font-size: 1.5rem; margin: 0 0 4px; }
+        .subtitulo { color: var(--gris); font-size: 0.92rem; margin: 0 0 22px; }
+
+        form {
+            background: #fff;
+            border: 1px solid var(--borde);
+            border-radius: 14px;
+            padding: 20px 22px;
+            box-shadow: 0 4px 18px rgba(31,36,48,.06);
+        }
+        fieldset {
+            border: none;
+            padding: 0;
+            margin: 0 0 18px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 18px;
+        }
+        legend {
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--rojo);
+            padding: 0;
+            margin-bottom: 10px;
+        }
+        label { display: flex; flex-direction: column; font-size: 0.86rem; font-weight: 600; gap: 5px; }
+        select, input {
+            padding: 8px 10px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--tinta);
+        }
+        select:focus, input:focus { outline: 2px solid var(--rojo); outline-offset: 1px; }
+        .ayuda { font-size: 0.76rem; font-weight: 400; color: var(--gris); line-height: 1.45; }
+        .span-2 { grid-column: span 2; }
+
+        .nota {
+            grid-column: span 2;
+            background: #fdf1e3;
+            border-left: 4px solid #e8a33d;
+            border-radius: 8px;
+            padding: 9px 13px;
+            font-size: 0.8rem;
+            color: var(--tinta);
+            line-height: 1.5;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.02rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--rojo);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            transition: background .15s ease;
+        }
+        button:hover { background: var(--rojo-oscuro); }
+
+        #resultado {
+            margin-top: 20px;
+            padding: 18px 20px;
+            border-radius: 14px;
+            background: #fff;
+            border: 1px solid var(--borde);
+            box-shadow: 0 4px 18px rgba(31,36,48,.06);
+            display: none;
+        }
         #resultado.ok { display: block; }
-        .monto { font-size: 1.6rem; font-weight: bold; color: #047857; }
-        .meta { color: #6b7280; font-size: 0.85rem; }
-        .error { color: #b91c1c; }
+        .monto { font-size: 1.8rem; font-weight: 800; color: var(--verde); }
+        .rango {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #e7f3ee;
+            border-left: 4px solid var(--verde);
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .rango b { font-size: 1.05rem; }
+        .meta { color: var(--gris); font-size: 0.82rem; margin-top: 10px; line-height: 1.5; }
+        .error { color: var(--rojo); font-weight: 600; }
+
+        @media (max-width: 560px) {
+            fieldset { grid-template-columns: 1fr; }
+            .span-2, .nota { grid-column: span 1; }
+        }
     </style>
 </head>
 <body>
     <h1>Estimador de salario — roles de AI/ML/Data Science</h1>
-    <p class="meta">Predice el salario anual de referencia (USD) a partir del pipeline champion registrado en MLflow.</p>
+    <p class="subtitulo">Salario anual de referencia (USD) estimado por el pipeline <b>champion</b> registrado en MLflow. Es una referencia de mercado, no una tasación exacta.</p>
 
     <form id="form-prediccion">
-        <label>Año
-            <input type="number" name="work_year" value="2025" min="2020" max="2030" required>
-        </label>
-        <label>Seniority
-            <select name="experience_level">
-                <option value="EN">Entry (EN)</option>
-                <option value="MI">Mid (MI)</option>
-                <option value="SE" selected>Senior (SE)</option>
-                <option value="EX">Executive (EX)</option>
-            </select>
-        </label>
-        <label>Tipo de contrato
-            <select name="employment_type">
-                <option value="FT" selected>Full-time (FT)</option>
-                <option value="PT">Part-time (PT)</option>
-                <option value="CT">Contract (CT)</option>
-                <option value="FL">Freelance (FL)</option>
-            </select>
-        </label>
-        <label>Cargo
-            <input type="text" name="job_title" value="Data Scientist" required>
-        </label>
-        <label>País de residencia (ISO-2)
-            <input type="text" name="employee_residence" value="US" maxlength="2" required>
-        </label>
-        <label>Modalidad remota
-            <select name="remote_ratio">
-                <option value="0">Presencial (0)</option>
-                <option value="50">Híbrido (50)</option>
-                <option value="100" selected>Remoto total (100)</option>
-            </select>
-        </label>
-        <label>País de la empresa (ISO-2)
-            <input type="text" name="company_location" value="US" maxlength="2" required>
-        </label>
-        <label>Tamaño de la empresa
-            <select name="company_size">
-                <option value="S">Pequeña (S)</option>
-                <option value="M" selected>Mediana (M)</option>
-                <option value="L">Grande (L)</option>
-            </select>
-        </label>
-        <button type="submit">Predecir salario</button>
+        <fieldset>
+            <legend>El puesto</legend>
+            <label>Cargo
+                <select name="job_title">
+                    <option value="Data Scientist" selected>Data Scientist</option>
+                    <option value="Data Engineer">Data Engineer</option>
+                    <option value="Data Analyst">Data Analyst</option>
+                    <option value="Machine Learning Engineer">Machine Learning Engineer</option>
+                    <option value="Software Engineer">Software Engineer</option>
+                    <option value="Engineer">Engineer</option>
+                    <option value="Analyst">Analyst</option>
+                    <option value="Analytics Engineer">Analytics Engineer</option>
+                    <option value="Data Architect">Data Architect</option>
+                    <option value="Research Scientist">Research Scientist</option>
+                    <option value="Research Engineer">Research Engineer</option>
+                    <option value="Applied Scientist">Applied Scientist</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Product Manager">Product Manager</option>
+                    <option value="Associate">Associate</option>
+                    <option value="OTHER">Otro cargo (no está en la lista)</option>
+                </select>
+                <span class="ayuda">Los 15 cargos más frecuentes del dataset; cualquier otro se estima con el grupo "otros cargos".</span>
+            </label>
+            <label>Nivel de experiencia (seniority)
+                <select name="experience_level">
+                    <option value="EN">EN — Entry / Junior: inicio de carrera</option>
+                    <option value="MI">MI — Mid: nivel intermedio</option>
+                    <option value="SE" selected>SE — Senior: experimentado</option>
+                    <option value="EX">EX — Executive: dirección (VP, C-level)</option>
+                </select>
+                <span class="ayuda">EN = recién inicia en el rol · MI = ya domina el rol · SE = experto/referente técnico · EX = lidera el área.</span>
+            </label>
+            <label>Tipo de contrato
+                <select name="employment_type">
+                    <option value="FT" selected>Tiempo completo (FT)</option>
+                    <option value="PT">Medio tiempo (PT)</option>
+                    <option value="CT">Por contrato (CT)</option>
+                    <option value="FL">Freelance (FL)</option>
+                </select>
+            </label>
+            <label>Año
+                <input type="number" name="work_year" value="2025" min="2020" max="2030" required>
+                <span class="ayuda">Año del salario a estimar.</span>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Ubicación y modalidad</legend>
+            <label>País de residencia de la persona
+                <select name="employee_residence">
+                    <optgroup label="Con datos propios en el modelo">
+                        <option value="US" selected>Estados Unidos</option>
+                        <option value="CA">Canadá</option>
+                        <option value="GB">Reino Unido</option>
+                    </optgroup>
+                    <optgroup label="Otros países (se agrupan como 'resto del mundo')">
+                        <option value="OTHER">Colombia</option>
+                        <option value="OTHER">México</option>
+                        <option value="OTHER">Argentina</option>
+                        <option value="OTHER">Brasil</option>
+                        <option value="OTHER">Chile</option>
+                        <option value="OTHER">Perú</option>
+                        <option value="OTHER">España</option>
+                        <option value="OTHER">Alemania</option>
+                        <option value="OTHER">Francia</option>
+                        <option value="OTHER">Países Bajos</option>
+                        <option value="OTHER">Portugal</option>
+                        <option value="OTHER">Irlanda</option>
+                        <option value="OTHER">India</option>
+                        <option value="OTHER">Australia</option>
+                        <option value="OTHER">Otro país</option>
+                    </optgroup>
+                </select>
+            </label>
+            <label>País de la empresa
+                <select name="company_location">
+                    <optgroup label="Con datos propios en el modelo">
+                        <option value="US" selected>Estados Unidos</option>
+                        <option value="CA">Canadá</option>
+                        <option value="GB">Reino Unido</option>
+                    </optgroup>
+                    <optgroup label="Otros países (se agrupan como 'resto del mundo')">
+                        <option value="OTHER">Colombia</option>
+                        <option value="OTHER">México</option>
+                        <option value="OTHER">Argentina</option>
+                        <option value="OTHER">Brasil</option>
+                        <option value="OTHER">Chile</option>
+                        <option value="OTHER">Perú</option>
+                        <option value="OTHER">España</option>
+                        <option value="OTHER">Alemania</option>
+                        <option value="OTHER">Francia</option>
+                        <option value="OTHER">Países Bajos</option>
+                        <option value="OTHER">Portugal</option>
+                        <option value="OTHER">Irlanda</option>
+                        <option value="OTHER">India</option>
+                        <option value="OTHER">Australia</option>
+                        <option value="OTHER">Otro país</option>
+                    </optgroup>
+                </select>
+            </label>
+            <label>Modalidad de trabajo
+                <select name="remote_ratio">
+                    <option value="0">Presencial (0% remoto)</option>
+                    <option value="50">Híbrido (50% remoto)</option>
+                    <option value="100" selected>Remoto total (100%)</option>
+                </select>
+            </label>
+            <label>Tamaño de la empresa
+                <select name="company_size">
+                    <option value="S">Pequeña (S) — menos de 50 empleados</option>
+                    <option value="M" selected>Mediana (M) — 50 a 250 empleados</option>
+                    <option value="L">Grande (L) — más de 250 empleados</option>
+                </select>
+            </label>
+            <div class="nota"><b>Sobre los países:</b> el 90% del dataset es de Estados Unidos, así que el modelo solo distingue US, Canadá y Reino Unido; los demás países (Colombia incluida) se estiman con el promedio del grupo "resto del mundo". La cifra para Colombia es una referencia del mercado internacional, no del mercado local.</div>
+        </fieldset>
+
+        <button type="submit">Estimar salario</button>
     </form>
 
     <div id="resultado"></div>
@@ -95,9 +271,23 @@
                     throw new Error(body.detail || 'Error desconocido');
                 }
 
+                // Rango de referencia de ±30% alrededor de la estimación: en la
+                // validación del modelo, 55 de cada 100 salarios reales quedaron
+                // dentro de un rango así (ver docs/guia_estudio.md).
+                const estimado = body.predicted_salary_usd;
+                const rangoBajo = Math.round(estimado * 0.7);
+                const rangoAlto = Math.round(estimado * 1.3);
+                const usd = (v) => '$' + v.toLocaleString('en-US') + ' USD';
+
                 resultado.innerHTML = `
-                    <div class="monto">$${body.predicted_salary_usd.toLocaleString('en-US')} USD</div>
-                    <div class="meta">Modelo ${body.model_name} v${body.model_version} (alias ${body.model_alias})</div>
+                    <div class="monto">${usd(Math.round(estimado))} al año</div>
+                    <div class="rango">Salario probable: entre <b>${usd(rangoBajo)}</b> y <b>${usd(rangoAlto)}</b> al año</div>
+                    <div class="meta">
+                        <b>Cómo leerlo:</b> la cifra grande es la estimación puntual del modelo y el rango es esa cifra ±30%.
+                        Confianza: en las pruebas del modelo, <b>55 de cada 100</b> salarios reales quedaron dentro de su rango.
+                        Úsalo como referencia de mercado, no como una cifra exacta.<br>
+                        Modelo: ${body.model_name} v${body.model_version} (alias ${body.model_alias}).
+                    </div>
                 `;
             } catch (error) {
                 resultado.innerHTML = `<div class="error">Error: ${error.message}</div>`;

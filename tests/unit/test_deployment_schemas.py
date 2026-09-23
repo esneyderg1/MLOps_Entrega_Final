@@ -23,6 +23,19 @@ def test_salary_request_acepta_payload_valido():
     assert request.remote_ratio == 100
 
 
+def test_salary_request_acepta_other_como_pais():
+    """La interfaz agrupa países fuera de US/CA/GB como OTHER (igual que el
+    entrenamiento), así que el esquema debe aceptarlo en ambos campos de país."""
+    payload = {
+        **VALID_PAYLOAD,
+        "employee_residence": "OTHER",
+        "company_location": "OTHER",
+    }
+    request = SalaryRequest(**payload)
+    assert request.employee_residence == "OTHER"
+    assert request.company_location == "OTHER"
+
+
 @pytest.mark.parametrize(
     "field, value",
     [
