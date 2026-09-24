@@ -14,8 +14,8 @@ aquí solo se organiza el orden de la historia. Ajustar libremente.
 |---|---|---|
 | **Carolina** | Problema de negocio, dataset y conclusiones del EDA (qué se conserva, qué se agrupa, partición temporal) | 2 |
 | **Juanita** | Procesamiento sin leakage (`processing_flow`) y optimización con Optuna (parent/child runs) | 3 |
-| **Yennifer** | Baseline (dummy + RF), comparación de familias y resultados/precisión con el hallazgo honesto del 0,59% | 4 |
-| **Esneyder** | Registro del champion en MLflow, orquestación end-to-end (`pipeline_flow` en vivo), y despliegue FastAPI/Docker con la demo de cierre | 5 y 6 |
+| **Yennifer** | Baseline (dummy + RF) y resultados/precisión con el hallazgo honesto del 0,59% (slide 4); tabla comparativa de las 3 familias × 2 targets y por qué ninguna superó al champion (slide 5) | 4 y 5 |
+| **Esneyder** | Registro del champion en MLflow, orquestación end-to-end (`pipeline_flow` en vivo), y despliegue FastAPI/Docker con la demo de cierre | 6 y 7 |
 
 La presentación cierra con la demo en vivo (sin slide de cierre aparte). Las
 15 preguntas de sustentación de `docs/guia_estudio.md` las repasamos los

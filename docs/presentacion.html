@@ -119,6 +119,24 @@
   .boton-app:hover { background: var(--rojo-oscuro); transform: translateY(-2px); }
   code.cmd { background: #eceae5; border-radius: 8px; padding: .25rem .6rem; font-size: .95em; }
 
+
+  /* Tabla comparativa de familias */
+  .tabla-modelos { width: 100%; border-collapse: collapse; margin-top: 1rem;
+                   font-size: clamp(.72rem, 1.2vw, .95rem); background: var(--tarjeta);
+                   border-radius: 12px; overflow: hidden; box-shadow: 0 3px 14px rgba(31,36,48,.07); }
+  .tabla-modelos thead th { background: #f0ece6; color: var(--tinta); font-weight: 700;
+                            text-align: right; padding: .6rem .8rem; border-bottom: 2px solid var(--rojo);
+                            font-size: .92em; letter-spacing: .02em; }
+  .tabla-modelos thead th:first-child, .tabla-modelos tbody td:first-child { text-align: left; }
+  .tabla-modelos tbody td { padding: .48rem .8rem; text-align: right; border-bottom: 1px solid #ece9e3; }
+  .tabla-modelos tbody tr:last-child td { border-bottom: none; }
+  .tabla-modelos tbody tr.ref { background: #fdf1e3; }
+  .tabla-modelos tbody tr.champion { background: #fde9ea; font-weight: 700; }
+  .tabla-modelos tbody tr.champion td { color: var(--rojo); }
+  .tabla-modelos .destino { color: var(--gris); font-weight: 400; font-size: .92em; }
+  .tabla-modelos tbody tr.champion .destino { color: var(--rojo); }
+  .tabla-modelos .mejor { color: var(--verde); font-weight: 700; }
+
   /* Quien presenta */
   .quien { position: absolute; top: 1.3rem; right: 2rem; display: flex; flex-direction: column;
            align-items: center; gap: .3rem; z-index: 6; }
@@ -221,13 +239,37 @@
       <div class="valor rojo">68.142</div>
       <div class="barra" style="height:83%">USD</div>
       <div class="etiqueta">RF + Optuna = champion</div>
-      <div class="detalle">Solo 0,59% mejor que el baseline, y 6 familias alternativas (lineal, ridge, boosting ± log) tampoco lo superaron.</div>
+      <div class="detalle">Solo 0,59% mejor que el baseline, y ninguna de las 6 familias alternativas lo superó (tabla siguiente).</div>
     </div>
   </div>
   <div class="nota">Lectura honesta: R² de 0,234, MAE de ~48 mil USD y <b>55% de las predicciones dentro de ±30%</b>. Es un estimador de referencia de mercado, no un tasador exacto: el techo está en las features, no en el algoritmo.</div>
 </section>
 
-<!-- 5. Esney: orquestación y registro (ejecución en vivo) -->
+<!-- 5. Yen: tabla comparativa de familias -->
+<section class="slide">
+  <div class="quien y" title="Yennifer"><span>Y</span><small>Yennifer</small></div>
+  <div class="kicker">3 · Modelos y resultados</div>
+  <h2>Probamos <span class="acento">otras familias de modelos</span>: ninguna superó al champion</h2>
+  <p class="grande">Antes de fijar el candidato comparamos <b>3 familias × 2 targets</b> con los mismos datos y la misma validación temporal (<code class="cmd">comparison_flow</code>). Todo cabe en <b>937 USD</b> de diferencia entre el mejor y el peor.</p>
+  <table class="tabla-modelos">
+    <thead>
+      <tr><th>Modelo</th><th>Target</th><th>RMSE (USD)</th><th>MAE (USD)</th><th>R²</th></tr>
+    </thead>
+    <tbody>
+      <tr class="champion"><td>RandomForest + Optuna <span class="destino">← champion</span></td><td>USD</td><td>68.142</td><td>48.224</td><td>0,234</td></tr>
+      <tr><td>HistGradientBoosting</td><td>USD</td><td>68.198</td><td>48.228</td><td>0,233</td></tr>
+      <tr class="ref"><td>RandomForest <span class="destino">← baseline</span></td><td>USD</td><td>68.547</td><td>48.527</td><td>0,225</td></tr>
+      <tr><td>LinearRegression</td><td>USD</td><td>68.752</td><td>49.610</td><td>0,220</td></tr>
+      <tr><td>Ridge</td><td>USD</td><td>68.752</td><td>49.611</td><td>0,220</td></tr>
+      <tr><td>Ridge</td><td>log1p</td><td>68.859</td><td class="mejor">47.632</td><td>0,218</td></tr>
+      <tr><td>LinearRegression</td><td>log1p</td><td>68.860</td><td class="mejor">47.632</td><td>0,218</td></tr>
+      <tr><td>HistGradientBoosting</td><td>log1p</td><td>69.079</td><td class="mejor">47.176</td><td>0,213</td></tr>
+    </tbody>
+  </table>
+  <div class="nota">Dos lecturas: <b>(1)</b> ocho modelos distintos convergen a la banda 68–69 mil USD — el techo está en las <b>features</b>, no en el algoritmo. <b>(2)</b> Las variantes <code class="cmd">log1p</code> bajan el MAE (en verde) pero suben el RMSE: optimizan el error <i>relativo</i> y castigan menos los salarios altos; nuestra métrica de entrega es RMSE en USD, así que pierden.</div>
+</section>
+
+<!-- 6. Esney: orquestación y registro (ejecución en vivo) -->
 <section class="slide">
   <div class="quien e" title="Esneyder"><span>E</span><small>Esneyder</small></div>
   <div class="kicker">4 · Registro y orquestación</div>
@@ -241,7 +283,7 @@
   <div class="nota clave">En vivo: <code class="cmd">uv run python -m proyecto_final.flows.pipeline_flow</code></div>
 </section>
 
-<!-- 6. Cierre: demo del despliegue -->
+<!-- 7. Cierre: demo del despliegue -->
 <section class="slide portada">
   <div class="quien e" title="Esneyder"><span>E</span><small>Esneyder</small></div>
   <div class="kicker">5 · Despliegue</div>
@@ -252,7 +294,7 @@
   <div class="autores" style="margin-top:1.8rem">¡Gracias!</div>
 </section>
 
-<div class="contador" id="contador">1 / 6</div>
+<div class="contador" id="contador">1 / 7</div>
 <div class="pie">Usa las flechas del teclado o los botones para navegar</div>
 <div class="controles">
   <button id="atras" title="Anterior">←</button>
